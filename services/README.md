@@ -54,7 +54,7 @@ Check with `docker exec notebook curl -s localhost:8000/health`. The notebook co
 
 ## Switch the alert model
 
-The scorer always computes both XGBoost and the MLP on the NNPA; `MODEL` decides which score drives the levels, each with its own thresholds chosen on validation (`notebooks/05_eval` → `thresholds.json["per_model"]`).
+The scorer always computes both XGBoost and the MLP on the NNPA; `MODEL` decides which score drives the levels, each with its own thresholds chosen on validation (`notebooks/05_eval` → `thresholds.json["per_model"]`). Thresholds cap both new false alarms (≤ 1 per patient-day for Critical) and alarm time (≤ 10% of non-sepsis patient-hours in Critical, ≤ 25% at Watch or above). `05_eval` also picks the best model on validation and prints which `MODEL=` to use (`thresholds.json["recommended_model"]`).
 
 ```bash
 echo "MODEL=xgb" >> .env            # ensemble (default) | xgb | mlp
