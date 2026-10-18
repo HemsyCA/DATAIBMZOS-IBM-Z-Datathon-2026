@@ -42,7 +42,7 @@ DATA_DIR = os.environ.get("DATA_DIR", "/data/sepsis")
 MODEL_DIR = os.environ.get("MODELS_DIR", f"{DATA_DIR}/models")
 RUNTIME = os.environ.get("RUNTIME_DIR", f"{DATA_DIR}/runtime")
 GRANITE_URL = os.environ.get("GRANITE_URL", "")            # e.g. http://granite:8080/note ; empty = template notes
-NOTE_MAX_WAIT = float(os.environ.get("NOTE_MAX_WAIT_SEC", "20"))  # Granite skips alerts older than this
+NOTE_MAX_WAIT = float(os.environ.get("NOTE_MAX_WAIT_SEC", "120"))  # Granite skips alerts older than this
 DEVICE = "nnpa" if NNPA_OK and os.environ.get("USE_NNPA", "1") == "1" else "cpu"
 os.makedirs(RUNTIME, exist_ok=True)
 
@@ -117,7 +117,7 @@ def label(f: str) -> str:
 _io_lock = threading.Lock()
 _last_level: dict[str, str] = {}
 _risk_hist: dict[str, list] = {}           # key -> [(hour, risk)] for the last 7 hours
-_note_q: "queue.Queue[dict]" = queue.Queue(maxsize=100)
+_note_q: "queue.LifoQueue[dict]" = queue.LifoQueue(maxsize=100)   # newest alert first: Granite works on what is on screen
 
 
 def _append(path: str, rec: dict):

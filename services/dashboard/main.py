@@ -139,7 +139,7 @@ async function tick(){
   document.getElementById("left").innerHTML=`<b>Sepsis risk over time — bed ${b.bed}</b>`+line(b.history,["risk"],["#0f62fe"],[0,1])+
     `<b>Vital signs (last value carried forward)</b>`+line(b.history,["HR","Resp","MAP"],["#0f62fe","#da1e28","#8a3ffc"])+
     `<div class="legend"><span><i style="background:#0f62fe"></i>HR</span><span><i style="background:#da1e28"></i>Resp</span><span><i style="background:#8a3ffc"></i>MAP</span></div>`;
-  const drivers=(b.drivers||[]).map(x=>`<li>${esc(x.label)}: <b>${esc(x.value)}</b></li>`).join("");
+  const drivers=(b.drivers||[]).map(x=>`<li>${esc(x.label)}: <b>${x.value==null?"not measured":esc(x.value)}</b></li>`).join("");
   const src={granite:"IBM Granite (llama.cpp + zDNN), checked against the data",template_rejected:"template (Granite note failed the fact check)",template_backlog:"template (Granite busy with earlier alerts)",template_pending:"template (written instantly; IBM Granite draft in progress, replaced if it passes the fact check)"}[b.note_source]||"template (Granite unavailable)";
   document.getElementById("right").innerHTML=`<b>Why this alert — bed ${b.bed} (${b.level}, risk ${Math.round(b.risk*100)}%)</b>`+
     (drivers?`<ul>${drivers}</ul>`:`<p class="small">Top drivers are shown for Critical patients.</p>`)+

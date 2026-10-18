@@ -31,7 +31,7 @@ services:
     command: ["uvicorn", "services.granite.main:app", "--host", "0.0.0.0", "--port", "8080"]
     environment:
       GRANITE_MODEL: /data/sepsis/models/granite-4.0-h-350m-base-be.f16.gguf
-      GRANITE_THREADS: "1"
+      GRANITE_THREADS: "2"
 
   replayer:
     <<: *app

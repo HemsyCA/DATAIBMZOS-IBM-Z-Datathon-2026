@@ -2,13 +2,14 @@
 
 POST /note {"facts": "- fact\n- fact"} -> {"note": "...", "examples": [...]}
 The input carries no identifiers: risk trend, hours in ICU and the alert drivers in plain words.
-The model is a small *base* model, so it is guided with few-shot examples (two picked at random each
-time so it does not lock onto one), a repeat penalty, and strict stop words. The scorer then fact-checks
-the note (numbers, topics, copying, loops) and falls back to a template if it fails.
+The model is a small *base* model, so it is guided with two fixed few-shot examples, a repeat penalty
+and strict stop words. The prompt prefix never changes, so llama.cpp reuses its KV cache and only the
+new facts are processed: notes come back in seconds on the z17. The scorer then fact-checks the note
+(numbers, topics, high/low, invented history, copying, loops) and keeps the template if it fails.
 """
 import os
-import random
 import threading
+import time
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -77,12 +78,13 @@ def health():
 
 @app.post("/note")
 def note(req: Req):
-    shots = random.sample(EXAMPLES, 2)
+    shots = EXAMPLES[:2]                       # fixed prefix -> llama.cpp reuses the cached prompt
+    t0 = time.perf_counter()
     with _lock:   # one generation at a time on 3 vCPUs
-        out = llm()(prompt(req.facts, shots), max_tokens=110, temperature=0.4, top_p=0.9, repeat_penalty=1.18,
+        out = llm()(prompt(req.facts, shots), max_tokens=80, temperature=0.4, top_p=0.9, repeat_penalty=1.18,
                     stop=["\nFacts", "Facts:", "\n\n", "\n-", "Note:"], echo=False)
     text = out["choices"][0]["text"].strip()
-    print("granite raw:", text.replace("\n", " ")[:300], flush=True)
+    print(f"granite raw ({time.perf_counter() - t0:.1f}s):", text.replace("\n", " ")[:300], flush=True)
     if len(text) < 20:
         raise HTTPException(502, "empty note")
     return {"note": text, "examples": [n for _, n in shots]}
