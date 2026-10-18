@@ -14,7 +14,7 @@ os.environ["TORCHDYNAMO_DISABLE"] = "1"
 MODELS = os.environ.get("MODELS_DIR", "/data/models")
 THRESHOLDS = json.load(open(f"{MODELS}/thresholds.json"))
 XGB = xgb.Booster(); XGB.load_model(f"{MODELS}/xgb.json")
-FEATURES = json.load(open(f"{MODELS}/../feature_list.json")) if os.path.exists(f"{MODELS}/../feature_list.json") else []
+FEATURES = json.load(open(os.environ.get("FEATURE_LIST", f"{MODELS}/../data/processed/feature_list.json")))
 
 app = FastAPI()
 

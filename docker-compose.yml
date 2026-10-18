@@ -4,7 +4,8 @@ services:
       context: .
       dockerfile: services/scorer/Dockerfile
     environment:
-      - MODELS_DIR=/data/models
+      - MODELS_DIR=/data/sepsis/models
+      - FEATURE_LIST=/data/sepsis/data/processed/feature_list.json
       - SEPSIS_HMAC_KEY=${SEPSIS_HMAC_KEY}
       - SEPSIS_AES_KEY_HEX=${SEPSIS_AES_KEY_HEX}
       - AUDIT_PATH=/data/audit.jsonl
