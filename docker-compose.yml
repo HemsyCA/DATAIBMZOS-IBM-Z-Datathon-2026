@@ -1,0 +1,44 @@
+services:
+  scorer:
+    build:
+      context: .
+      dockerfile: services/scorer/Dockerfile
+    environment:
+      - MODELS_DIR=/data/models
+      - SEPSIS_HMAC_KEY=${SEPSIS_HMAC_KEY}
+      - SEPSIS_AES_KEY_HEX=${SEPSIS_AES_KEY_HEX}
+      - AUDIT_PATH=/data/audit.jsonl
+    volumes:
+      - /home/linux1/shared:/data
+    ports: ["8000:8000"]
+    user: "1000:1000"
+  replayer:
+    build:
+      context: .
+      dockerfile: services/replayer/Dockerfile
+    environment:
+      - FEATURES_PATH=/data/sepsis/data/processed/features.pkl
+      - FEATURE_LIST=/data/sepsis/data/processed/feature_list.json
+      - SCORER_URL=http://scorer:8000/score
+      - DELAY_SEC=1
+    volumes:
+      - /home/linux1/shared:/data
+    depends_on: [scorer]
+    user: "1000:1000"
+  granite:
+    image: registry.linuxone.cloud.marist.edu/l1cc/jupyterlab-image-s390x:latest
+    command: ["python", "-m", "llama_cpp.server", "--model", "/data/models/granite.gguf", "--port", "8080"]
+    volumes:
+      - /home/linux1/shared:/data
+    ports: ["8080:8080"]
+    user: "1000:1000"
+  dashboard:
+    build:
+      context: .
+      dockerfile: services/dashboard/Dockerfile
+    environment:
+      - AUDIT_PATH=/data/audit.jsonl
+    volumes:
+      - /home/linux1/shared:/data
+    ports: ["8501:8501"]
+    user: "1000:1000"
