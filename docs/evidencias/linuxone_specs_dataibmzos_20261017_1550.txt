@@ -1,0 +1,854 @@
+Reporte generado: Sat Oct 17 03:50:04 PM UTC 2026  | usuario: linux1
+
+
+===== uname -a =====
+Linux dataibmzos 6.8.0-147-generic #147-Ubuntu SMP Thu Sep 24 10:59:43 UTC 2026 s390x s390x s390x GNU/Linux
+
+
+===== cat /etc/os-release =====
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.5 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+
+
+===== hostnamectl =====
+ Static hostname: dataibmzos
+       Icon name: computer-vm
+         Chassis: vm 🖴
+      Machine ID: c1e1175a6e0d4429bf1a7ee902a4bb59
+         Boot ID: 66147a52c2ec430aac37308f44e32b4d
+  Virtualization: zvm
+Operating System: Ubuntu 24.04.5 LTS
+          Kernel: Linux 6.8.0-147-generic
+    Architecture: s390x
+
+
+===== systemd-detect-virt =====
+zvm
+
+
+===== uptime =====
+ 15:50:04 up 12:51,  1 user,  load average: 0.00, 0.00, 0.00
+
+
+===== lscpu =====
+Architecture:                            s390x
+CPU op-mode(s):                          32-bit, 64-bit
+Byte Order:                              Big Endian
+CPU(s):                                  3
+On-line CPU(s) list:                     0-2
+Vendor ID:                               IBM/S390
+Model name:                              -
+Machine type:                            9175
+Thread(s) per core:                      1
+Core(s) per socket:                      1
+Socket(s) per book:                      1
+Book(s) per drawer:                      1
+Drawer(s):                               3
+CPU dynamic MHz:                         5508
+CPU static MHz:                          5508
+BogoMIPS:                                28901.00
+Dispatching mode:                        horizontal
+Flags:                                   esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te vx vxd vxe gs vxe2 vxp sort dflt vxp2 nnpa sie
+Hypervisor:                              z/VM 7.3.0
+Hypervisor vendor:                       IBM
+Virtualization type:                     full
+L1d cache:                               384 KiB (3 instances)
+L1i cache:                               384 KiB (3 instances)
+L2 cache:                                108 MiB (3 instances)
+L3 cache:                                360 MiB
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-2
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Not affected
+Vulnerability Mds:                       Not affected
+Vulnerability Meltdown:                  Not affected
+Vulnerability Mmio stale data:           Not affected
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Not affected
+Vulnerability Spectre v1:                Mitigation; __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; etokens
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+Vulnerability Vmscape:                   Not affected
+
+
+===== lscpu -e =====
+CPU NODE DRAWER BOOK SOCKET CORE L1d:L1i:L2 ONLINE CONFIGURED POLARIZATION ADDRESS
+  0    0      0    0      0    0 0:0:0         yes yes        horizontal   0
+  1    0      1    1      1    1 1:1:1         yes yes        horizontal   1
+  2    0      2    2      2    2 2:2:2         yes yes        horizontal   2
+
+
+===== cat /proc/cpuinfo =====
+vendor_id       : IBM/S390
+# processors    : 3
+bogomips per cpu: 28901.00
+max thread id   : 0
+features	: esan3 zarch stfle msa ldisp eimm dfp edat etf3eh highgprs te vx vxd vxe gs vxe2 vxp sort dflt vxp2 nnpa sie 
+facilities      : 0 1 2 3 4 6 7 8 9 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 30 31 32 33 34 35 36 37 38 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 57 58 59 60 61 69 70 71 72 73 74 75 76 77 80 81 82 84 85 86 87 129 130 131 133 134 135 146 147 148 150 151 152 155 156 165 168 192 193 194 196 197
+cache0          : level=1 type=Data scope=Private size=128K line_size=256 associativity=8
+cache1          : level=1 type=Instruction scope=Private size=128K line_size=256 associativity=8
+cache2          : level=2 type=Unified scope=Private size=36864K line_size=256 associativity=18
+cache3          : level=3 type=Unified scope=Shared size=368640K line_size=256 associativity=180
+processor 0: version = FF,  identification = 07DFD8,  machine = 9175
+processor 1: version = FF,  identification = 07DFD8,  machine = 9175
+processor 2: version = FF,  identification = 07DFD8,  machine = 9175
+
+cpu number      : 0
+physical id     : 0
+core id         : 0
+book id         : 0
+drawer id       : 0
+dedicated       : 0
+address         : 0
+siblings        : 1
+cpu cores       : 1
+version         : FF
+identification  : 07DFD8
+machine         : 9175
+cpu MHz dynamic : 5508
+cpu MHz static  : 5508
+
+cpu number      : 1
+physical id     : 1
+core id         : 1
+book id         : 1
+drawer id       : 1
+dedicated       : 0
+address         : 1
+siblings        : 1
+cpu cores       : 1
+version         : FF
+identification  : 07DFD8
+machine         : 9175
+cpu MHz dynamic : 5508
+cpu MHz static  : 5508
+
+cpu number      : 2
+physical id     : 2
+core id         : 2
+book id         : 2
+drawer id       : 2
+dedicated       : 0
+address         : 2
+siblings        : 1
+cpu cores       : 1
+version         : FF
+identification  : 07DFD8
+machine         : 9175
+cpu MHz dynamic : 5508
+cpu MHz static  : 5508
+
+
+===== grep -o -w -E 'nnpa|vxe|vxe2|vxp|vxp2|dflt|sie|te|gs|sort' /proc/cpuinfo | sort -u =====
+dflt
+gs
+nnpa
+sie
+sort
+te
+vxe
+vxe2
+vxp
+vxp2
+
+
+===== cat /proc/sysinfo =====
+Manufacturer:         IBM             
+Type:                 9175
+LIC Identifier:       207327ff6a7208c8
+Model:                702              ME1             
+Sequence Code:        00000000000CDFD8
+Plant:                02  
+Model Capacity:       702              00000582
+Model Perm. Capacity: 702              00000582
+Model Temp. Capacity: 702              00000582
+Model Var. Capacity:  702              00000582
+Nominal Cap. Rating:  00000582
+Nominal Perm. Rating: 00000582
+Nominal Temp. Rating: 00000582
+Nominal Var. Rating:  00000582
+Capacity Adj. Ind.:   100
+Capacity Ch. Reason:  0
+Capacity Transient:   0
+Type 1 Percentage:    0
+Type 2 Percentage:    0
+Type 3 Percentage:    0
+Type 4 Percentage:    0
+Type 5 Percentage:    0
+
+CPUs Total:           208
+CPUs Configured:      2
+CPUs Standby:         0
+CPUs Reserved:        206
+CPUs G-MTID:          0
+CPUs S-MTID:          1
+Capability:           346
+Nominal Capability:   346
+Secondary Capability: 346
+Adjustment 02-way:    62593
+Adjustment 03-way:    61246
+Adjustment 04-way:    60305
+Adjustment 05-way:    59342
+Adjustment 06-way:    58435
+Adjustment 07-way:    57566
+Adjustment 08-way:    56727
+Adjustment 09-way:    55920
+Adjustment 10-way:    55135
+Adjustment 11-way:    54369
+Adjustment 12-way:    53620
+Adjustment 13-way:    52888
+Adjustment 14-way:    52172
+Adjustment 15-way:    51470
+Adjustment 16-way:    50782
+Adjustment 17-way:    50116
+Adjustment 18-way:    49521
+Adjustment 19-way:    48985
+Adjustment 20-way:    48500
+Adjustment 21-way:    48058
+Adjustment 22-way:    47654
+Adjustment 23-way:    47282
+Adjustment 24-way:    46939
+Adjustment 25-way:    46621
+Adjustment 26-way:    46325
+Adjustment 27-way:    46049
+Adjustment 28-way:    45790
+Adjustment 29-way:    45548
+Adjustment 30-way:    45319
+Adjustment 31-way:    45104
+Adjustment 32-way:    44900
+Adjustment 33-way:    44707
+Adjustment 34-way:    44523
+Adjustment 35-way:    44348
+Adjustment 36-way:    44182
+Adjustment 37-way:    44022
+Adjustment 38-way:    43870
+Adjustment 39-way:    43724
+Adjustment 40-way:    43586
+Adjustment 41-way:    43450
+Adjustment 42-way:    43315
+Adjustment 43-way:    43181
+Adjustment 44-way:    43047
+Adjustment 45-way:    42915
+Adjustment 46-way:    42783
+Adjustment 47-way:    42652
+Adjustment 48-way:    42522
+Adjustment 49-way:    42390
+Adjustment 50-way:    42258
+Adjustment 51-way:    42127
+Adjustment 52-way:    41997
+Adjustment 53-way:    41867
+Adjustment 54-way:    41739
+Adjustment 55-way:    41611
+Adjustment 56-way:    41483
+Adjustment 57-way:    41357
+Adjustment 58-way:    41231
+Adjustment 59-way:    41105
+Adjustment 60-way:    40981
+Adjustment 61-way:    40857
+Adjustment 62-way:    40733
+Adjustment 63-way:    40610
+Adjustment 64-way:    40488
+Adjustment 65-way:    40365
+Adjustment 66-way:    40243
+Adjustment 67-way:    40121
+Adjustment 68-way:    40000
+Adjustment 69-way:    39879
+Adjustment 70-way:    39759
+Adjustment 71-way:    39640
+Adjustment 72-way:    39521
+Adjustment 73-way:    39403
+Adjustment 74-way:    39285
+Adjustment 75-way:    39167
+Adjustment 76-way:    39051
+Adjustment 77-way:    38935
+Adjustment 78-way:    38819
+Adjustment 79-way:    38704
+Adjustment 80-way:    38589
+Adjustment 81-way:    38475
+Adjustment 82-way:    38361
+Adjustment 83-way:    38250
+Adjustment 84-way:    38142
+Adjustment 85-way:    38035
+Adjustment 86-way:    37931
+Adjustment 87-way:    37829
+Adjustment 88-way:    37729
+Adjustment 89-way:    37631
+Adjustment 90-way:    37535
+Adjustment 91-way:    37441
+Adjustment 92-way:    37348
+Adjustment 93-way:    37257
+Adjustment 94-way:    37168
+Adjustment 95-way:    37080
+Adjustment 96-way:    36994
+Adjustment 97-way:    36909
+Adjustment 98-way:    36826
+Adjustment 99-way:    36744
+Adjustment 100-way:    36664
+Adjustment 101-way:    36585
+Adjustment 102-way:    36508
+Adjustment 103-way:    36431
+Adjustment 104-way:    36356
+Adjustment 105-way:    36283
+Adjustment 106-way:    36210
+Adjustment 107-way:    36138
+Adjustment 108-way:    36068
+Adjustment 109-way:    35999
+Adjustment 110-way:    35931
+Adjustment 111-way:    35863
+Adjustment 112-way:    35797
+Adjustment 113-way:    35732
+Adjustment 114-way:    35668
+Adjustment 115-way:    35604
+Adjustment 116-way:    35542
+Adjustment 117-way:    35480
+Adjustment 118-way:    35420
+Adjustment 119-way:    35360
+Adjustment 120-way:    35301
+Adjustment 121-way:    35242
+Adjustment 122-way:    35185
+Adjustment 123-way:    35128
+Adjustment 124-way:    35072
+Adjustment 125-way:    35017
+Adjustment 126-way:    34962
+Adjustment 127-way:    34908
+Adjustment 128-way:    34854
+Adjustment 129-way:    34801
+Adjustment 130-way:    34748
+Adjustment 131-way:    34696
+Adjustment 132-way:    34644
+Adjustment 133-way:    34593
+Adjustment 134-way:    34542
+Adjustment 135-way:    34492
+Adjustment 136-way:    34442
+Adjustment 137-way:    34393
+Adjustment 138-way:    34344
+Adjustment 139-way:    34295
+Adjustment 140-way:    34247
+Adjustment 141-way:    34200
+Adjustment 142-way:    34152
+Adjustment 143-way:    34106
+Adjustment 144-way:    34059
+Adjustment 145-way:    34013
+Adjustment 146-way:    33967
+Adjustment 147-way:    33922
+Adjustment 148-way:    33877
+Adjustment 149-way:    33832
+Adjustment 150-way:    33788
+Adjustment 151-way:    33744
+Adjustment 152-way:    33700
+Adjustment 153-way:    33657
+Adjustment 154-way:    33614
+Adjustment 155-way:    33571
+Adjustment 156-way:    33529
+Adjustment 157-way:    33486
+Adjustment 158-way:    33445
+Adjustment 159-way:    33403
+Adjustment 160-way:    33362
+Adjustment 161-way:    33321
+Adjustment 162-way:    33280
+Adjustment 163-way:    33240
+Adjustment 164-way:    33200
+Adjustment 165-way:    33160
+Adjustment 166-way:    33120
+Adjustment 167-way:    33081
+Adjustment 168-way:    33042
+Adjustment 169-way:    33003
+Adjustment 170-way:    32964
+Adjustment 171-way:    32925
+Adjustment 172-way:    32887
+Adjustment 173-way:    32849
+Adjustment 174-way:    32810
+Adjustment 175-way:    32772
+Adjustment 176-way:    32734
+Adjustment 177-way:    32697
+Adjustment 178-way:    32659
+Adjustment 179-way:    32622
+Adjustment 180-way:    32585
+Adjustment 181-way:    32547
+Adjustment 182-way:    32510
+Adjustment 183-way:    32474
+Adjustment 184-way:    32437
+Adjustment 185-way:    32400
+Adjustment 186-way:    32364
+Adjustment 187-way:    32328
+Adjustment 188-way:    32291
+Adjustment 189-way:    32255
+Adjustment 190-way:    32219
+Adjustment 191-way:    32184
+Adjustment 192-way:    32148
+Adjustment 193-way:    32112
+Adjustment 194-way:    32077
+Adjustment 195-way:    32042
+Adjustment 196-way:    32006
+Adjustment 197-way:    31971
+Adjustment 198-way:    31936
+Adjustment 199-way:    31901
+Adjustment 200-way:    31867
+Adjustment 201-way:    31832
+Adjustment 202-way:    31797
+Adjustment 203-way:    31763
+Adjustment 204-way:    31729
+Adjustment 205-way:    31695
+Adjustment 206-way:    31660
+Adjustment 207-way:    31626
+Adjustment 208-way:    31593
+
+LPAR Number:          7
+LPAR Characteristics: Shared 
+LPAR Name:            IBM20   
+LPAR Adjustment:      111
+LPAR CPUs Total:      40
+LPAR CPUs Configured: 23
+LPAR CPUs Standby:    17
+LPAR CPUs Reserved:   0
+LPAR CPUs Dedicated:  0
+LPAR CPUs Shared:     23
+LPAR CPUs G-MTID:     0
+LPAR CPUs S-MTID:     1
+LPAR CPUs PS-MTID:    0
+
+VM00 Name:            L5015035
+VM00 Control Program: z/VM    7.3.0   
+VM00 Adjustment:      130
+VM00 CPUs Total:      3
+VM00 CPUs Configured: 3
+VM00 CPUs Standby:    0
+VM00 CPUs Reserved:   0
+
+
+===== nproc =====
+3
+
+
+===== modprobe vmcp; vmcp q cpus =====
+modprobe: FATAL: Module vmcp not found in directory /lib/modules/6.8.0-147-generic
+Error: Could not open device /dev/vmcp: Permission denied
+
+
+===== vmcp q v all =====
+Error: Could not open device /dev/vmcp: Permission denied
+
+
+===== vmcp q virtual storage =====
+Error: Could not open device /dev/vmcp: Permission denied
+
+
+===== free -h =====
+               total        used        free      shared  buff/cache   available
+Mem:           7.8Gi       1.9Gi       198Mi       9.5Mi       5.9Gi       5.9Gi
+Swap:             0B          0B          0B
+
+
+===== lsmem =====
+RANGE                                 SIZE   STATE REMOVABLE  BLOCK
+0x0000000000000000-0x00000001ffffffff   8G  online       yes   0-31
+0x0000000200000000-0x0000000fffffffff  56G offline           32-255
+
+Memory block size:       256M
+Total online memory:       8G
+Total offline memory:     56G
+
+
+===== grep -i -E 'huge|memtotal|memavail|swap' /proc/meminfo =====
+MemTotal:        8201236 kB
+MemAvailable:    6216180 kB
+SwapCached:            0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Zswap:                 0 kB
+Zswapped:              0 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+FileHugePages:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       1024 kB
+Hugetlb:               0 kB
+
+
+===== lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE =====
+NAME      SIZE TYPE MOUNTPOINT        FSTYPE
+loop1    48.1M loop /snap/core18/2669 squashfs
+loop2    46.2M loop /snap/snapd/17887 squashfs
+loop3    40.5M loop /snap/snapd/28258 squashfs
+loop4     482K loop                   iso9660
+loop5      48M loop /snap/core18/3087 squashfs
+dasda      50G disk                   
+└─dasda1   50G part /                 ext4
+
+
+===== df -hT =====
+Filesystem     Type   Size  Used Avail Use% Mounted on
+tmpfs          tmpfs  801M  9.5M  792M   2% /run
+/dev/dasda1    ext4    50G   13G   35G  26% /
+tmpfs          tmpfs  4.0G     0  4.0G   0% /dev/shm
+tmpfs          tmpfs  5.0M     0  5.0M   0% /run/lock
+tmpfs          tmpfs  801M   12K  801M   1% /run/user/1000
+
+
+===== lsdasd =====
+Bus-ID    Status    Name      Device  Type         BlkSz  Size      Blocks
+================================================================================
+0.0.0100  active    dasda     94:0    FBA          512    51200MB   104857600
+
+
+===== lscss =====
+Device   Subchan.  DevType CU Type Use  PIM PAM POM  CHPIDs           
+----------------------------------------------------------------------
+0.0.1000 0.0.0000  1732/01 1731/01 yes  80  80  ff   00000000 00000000
+0.0.1001 0.0.0001  1732/01 1731/01 yes  80  80  ff   00000000 00000000
+0.0.1002 0.0.0002  1732/01 1731/01 yes  80  80  ff   00000000 00000000
+0.0.0100 0.0.0003  9336/10 6310/80 yes  80  80  ff   ff000000 00000000
+0.0.0009 0.0.0004  0000/00 3215/00 yes  80  80  ff   ff000000 00000000
+0.0.000c 0.0.0005  0000/00 2540/00 yes  80  80  ff   ff000000 00000000
+0.0.000d 0.0.0006  0000/00 2540/00      80  80  ff   ff000000 00000000
+0.0.000e 0.0.0007  0000/00 1403/00      80  80  ff   ff000000 00000000
+
+
+===== lszdev --online =====
+TYPE         ID                          ON   PERS  NAMES
+dasd-fba     0.0.0100                    yes  yes   dasda
+qeth         0.0.1000:0.0.1001:0.0.1002  yes  yes   enc1000
+generic-ccw  0.0.0009                    yes  yes   
+generic-ccw  0.0.000c                    yes  no    vmrdr-0.0.000c
+
+
+===== lszcrypt -V =====
+lszcrypt: No crypto card devices found.
+
+
+===== cpacfinfo -a =====
+bash: line 1: cpacfinfo: command not found
+
+
+===== cpacfstats =====
+cpacfstats: Can't access domain socket file '/run/cpacfstatsd_socket', errno=2 [No such file or directory]
+cpacfstats: Maybe cpacfstatsd daemon is not running ???
+cpacfstats: Can't connect to daemon
+
+
+===== grep -E '^name|^driver' /proc/crypto | paste - - | sort -u | head -80 =====
+name         : aes	driver       : aes-generic
+name         : aes	driver       : aes-s390
+name         : blake2b-160	driver       : blake2b-160-generic
+name         : blake2b-256	driver       : blake2b-256-generic
+name         : blake2b-384	driver       : blake2b-384-generic
+name         : blake2b-512	driver       : blake2b-512-generic
+name         : cbc(aes)	driver       : cbc-aes-s390
+name         : cbc(aes)	driver       : cbc(ecb(aes-generic))
+name         : cbc(aes)	driver       : cbc(ecb(aes-s390))
+name         : cbc(des3_ede)	driver       : cbc-des3_ede-s390
+name         : cbc(des)	driver       : cbc-des-s390
+name         : chacha20	driver       : chacha20-s390
+name         : cipher_null	driver       : cipher_null-generic
+name         : compress_null	driver       : compress_null-generic
+name         : crc32be	driver       : crc32be-vx
+name         : crc32c	driver       : crc32c-generic
+name         : crc32c	driver       : crc32c-vx
+name         : crc32	driver       : crc32-vx
+name         : crc64-rocksoft	driver       : crc64-rocksoft-generic
+name         : crct10dif	driver       : crct10dif-generic
+name         : ctr(aes)	driver       : ctr-aes-s390
+name         : ctr(des3_ede)	driver       : ctr-des3_ede-s390
+name         : ctr(des)	driver       : ctr-des-s390
+name         : deflate	driver       : deflate-generic
+name         : deflate	driver       : deflate-scomp
+name         : des3_ede	driver       : des3_ede-s390
+name         : des	driver       : des-s390
+name         : dh	driver       : dh-generic
+name         : digest_null	driver       : digest_null-generic
+name         : ecb(aes)	driver       : ecb(aes-generic)
+name         : ecb(aes)	driver       : ecb(aes-s390)
+name         : ecb(aes)	driver       : ecb-aes-s390
+name         : ecb(cipher_null)	driver       : ecb-cipher_null
+name         : ecb(des3_ede)	driver       : ecb-des3_ede-s390
+name         : ecb(des)	driver       : ecb-des-s390
+name         : gcm(aes)	driver       : gcm-aes-s390
+name         : ghash	driver       : ghash-generic
+name         : ghash	driver       : ghash-s390
+name         : jitterentropy_rng	driver       : jitterentropy_rng
+name         : lzo	driver       : lzo-generic
+name         : lzo	driver       : lzo-scomp
+name         : lzo-rle	driver       : lzo-rle-generic
+name         : lzo-rle	driver       : lzo-rle-scomp
+name         : md5	driver       : md5-generic
+name         : pkcs1pad(rsa,sha512)	driver       : pkcs1pad(rsa-generic,sha512)
+name         : rsa	driver       : rsa-generic
+name         : sha1	driver       : sha1-generic
+name         : sha1	driver       : sha1-s390
+name         : sha224	driver       : sha224-generic
+name         : sha224	driver       : sha224-s390
+name         : sha256	driver       : sha256-generic
+name         : sha256	driver       : sha256-s390
+name         : sha3-224	driver       : sha3-224-generic
+name         : sha3-224	driver       : sha3-224-s390
+name         : sha3-256	driver       : sha3-256-generic
+name         : sha3-256	driver       : sha3-256-s390
+name         : sha3-384	driver       : sha3-384-generic
+name         : sha3-384	driver       : sha3-384-s390
+name         : sha3-512	driver       : sha3-512-generic
+name         : sha3-512	driver       : sha3-512-s390
+name         : sha384	driver       : sha384-generic
+name         : sha384	driver       : sha384-s390
+name         : sha512	driver       : sha512-generic
+name         : sha512	driver       : sha512-s390
+name         : stdrng	driver       : drbg_nopr_ctr_aes128
+name         : stdrng	driver       : drbg_nopr_ctr_aes192
+name         : stdrng	driver       : drbg_nopr_ctr_aes256
+name         : stdrng	driver       : drbg_nopr_hmac_sha256
+name         : stdrng	driver       : drbg_nopr_hmac_sha384
+name         : stdrng	driver       : drbg_nopr_hmac_sha512
+name         : stdrng	driver       : drbg_nopr_sha256
+name         : stdrng	driver       : drbg_nopr_sha384
+name         : stdrng	driver       : drbg_nopr_sha512
+name         : stdrng	driver       : drbg_pr_ctr_aes128
+name         : stdrng	driver       : drbg_pr_ctr_aes192
+name         : stdrng	driver       : drbg_pr_ctr_aes256
+name         : stdrng	driver       : drbg_pr_hmac_sha256
+name         : stdrng	driver       : drbg_pr_hmac_sha384
+name         : stdrng	driver       : drbg_pr_hmac_sha512
+name         : stdrng	driver       : drbg_pr_sha256
+
+
+===== openssl version -a =====
+OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)
+built on: Wed Sep 16 18:47:02 2026 UTC
+platform: debian-s390x
+options:  bn(64,64)
+compiler: gcc -fPIC -pthread -m64 -Wa,--noexecstack -Wall -fzero-call-used-regs=used-gpr -DOPENSSL_TLS_SECURITY_LEVEL=2 -Wa,--noexecstack -g -O2 -mbackchain -ffile-prefix-map=/build/openssl-SJd6nd/openssl-3.0.13=. -fstack-protector-strong -Wformat -Werror=format-security -fno-stack-clash-protection -fdebug-prefix-map=/build/openssl-SJd6nd/openssl-3.0.13=/usr/src/openssl-3.0.13-0ubuntu3.16 -DOPENSSL_USE_NODELETE -DB_ENDIAN -DOPENSSL_PIC -DOPENSSL_BUILDING_OPENSSL -DNDEBUG -Wdate-time -D_FORTIFY_SOURCE=3
+OPENSSLDIR: "/usr/lib/ssl"
+ENGINESDIR: "/usr/lib/s390x-linux-gnu/engines-3"
+MODULESDIR: "/usr/lib/s390x-linux-gnu/ossl-modules"
+Seeding source: os-specific
+CPUINFO: OPENSSL_s390xcap=stfle:0xfbcbfffbfeffff7c:0x7fcef0000000000:0x77003b9804800000:0x0:kimd:0xf0000000fc000000:0x4000000000000001:klmd:0xf0000000fc000000:0x1:km:0xf070383800002828:0x282800000001:kmc:0xf070383800000000:0x1000000000000001:kmac:0xf070383800000000:0xf0f1:kmctr:0xf070383800000000:0x1:kmo:0xf070383800000000:0x1:kmf:0xf070383800000000:0x1:prno:0x9000000000000000:0xa001:kma:0x8000383800000000:0x1:pcc:0xf070383800002828:0xe0c0c00000000001:kdsa:0xf070700088888800:0x1
+
+
+===== openssl engine -c =====
+(dynamic) Dynamic engine loading support
+
+
+===== ip -br addr =====
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+enc1000          UP             148.100.108.226/23 fe80::2:12ff:fec0:77ef/64 
+docker0          DOWN           172.17.0.1/16 fe80::603f:f4ff:fe5e:8adc/64 
+
+
+===== lsqeth =====
+Device name                      : enc1000
+---------------------------------------------------------------------------
+        card_type                : Virt.NIC QDIO
+        cdev0                    : 0.0.1000
+        cdev1                    : 0.0.1001
+        cdev2                    : 0.0.1002
+        chpid                    : 00
+        online                   : 1
+        portname                 : no portname required
+        portno                   : 0
+        state                    : UP (LAN ONLINE)
+        priority_queueing        : disabled
+        buffer_count             : 64
+        layer2                   : 1
+        isolation                : none
+        bridge_role              : none
+        bridge_state             : inactive
+        bridge_hostnotify        : 0
+        bridge_reflect_promisc   : none
+
+
+
+===== dmesg | grep -i -E 'nnpa|zdnn|ai accel' =====
+dmesg: read kernel buffer failed: Operation not permitted
+
+
+===== ldconfig -p | grep -i -E 'zdnn|openblas|blas' =====
+
+
+===== ls /usr/lib*/libzdnn* /usr/local/lib*/libzdnn* 2>/dev/null =====
+
+
+===== python3 --version; pip3 --version =====
+Python 3.12.3
+bash: line 1: pip3: command not found
+
+
+===== pip3 list 2>/dev/null | grep -i -E 'torch|tensorflow|onnx|snapml|scikit|xgboost|lightgbm|numpy|pandas|zdnn|transformers|jupyter|flask|fastapi' =====
+
+
+===== python3 -c 'import tensorflow as tf; print("TF", tf.__version__, tf.config.list_physical_devices())' =====
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'tensorflow'
+
+
+===== python3 -c 'import torch; print("Torch", torch.__version__)' =====
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'torch'
+
+
+===== gcc --version | head -1; java -version =====
+bash: line 1: gcc: command not found
+bash: line 1: java: command not found
+
+
+===== conda --version; conda env list =====
+bash: line 1: conda: command not found
+bash: line 1: conda: command not found
+
+
+===== docker version; docker info | head -40 =====
+Client: Docker Engine - Community
+ Version:           29.8.0
+ API version:       1.56
+ Go version:        go1.26.8
+ Git commit:        88096ef
+ Built:             Thu Sep 17 08:51:40 2026
+ OS/Arch:           linux/s390x
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.8.0
+  API version:      1.56 (minimum version 1.40)
+  Go version:       go1.26.8
+  Git commit:       3ce5872
+  Built:            Thu Sep 17 08:51:40 2026
+  OS/Arch:          linux/s390x
+  Experimental:     false
+ containerd:
+  Version:          v2.3.5
+  GitCommit:        1294c24a7da8e5a793ed378161673abe94118892
+ runc:
+  Version:          1.5.1
+  GitCommit:        v1.5.1-0-g8f2685a4
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+Client: Docker Engine - Community
+ Version:    29.8.0
+ Context:    default
+ Debug Mode: false
+ Plugins:
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.37.1
+    Path:     /usr/libexec/docker/cli-plugins/docker-buildx
+  compose: Docker Compose (Docker Inc.)
+    Version:  v5.5.1
+    Path:     /usr/libexec/docker/cli-plugins/docker-compose
+  model: Docker Model Runner (Docker Inc.)
+    Version:  v1.2.6
+    Path:     /usr/libexec/docker/cli-plugins/docker-model
+
+Server:
+ Containers: 1
+  Running: 1
+  Paused: 0
+  Stopped: 0
+ Images: 2
+ Server Version: 29.8.0
+ Storage Driver: overlayfs
+  driver-type: io.containerd.snapshotter.v1
+ Logging Driver: json-file
+ Cgroup Driver: systemd
+ Cgroup Version: 2
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 1294c24a7da8e5a793ed378161673abe94118892
+ runc version: v1.5.1-0-g8f2685a4
+
+
+===== podman version; podman info | head -40 =====
+bash: line 1: podman: command not found
+bash: line 1: podman: command not found
+
+
+===== ulimit -a =====
+real-time non-blocking time  (microseconds, -R) unlimited
+core file size              (blocks, -c) 0
+data seg size               (kbytes, -d) unlimited
+scheduling priority                 (-e) 0
+file size                   (blocks, -f) unlimited
+pending signals                     (-i) 31890
+max locked memory           (kbytes, -l) 1025152
+max memory size             (kbytes, -m) unlimited
+open files                          (-n) 1024
+pipe size                (512 bytes, -p) 8
+POSIX message queues         (bytes, -q) 819200
+real-time priority                  (-r) 0
+stack size                  (kbytes, -s) 8192
+cpu time                   (seconds, -t) unlimited
+max user processes                  (-u) 31890
+virtual memory              (kbytes, -v) unlimited
+file locks                          (-x) unlimited
+
+
+===== getenforce; aa-status --enabled && echo AppArmor activo =====
+bash: line 1: getenforce: command not found
+AppArmor activo
+
+
+===== systemctl list-units --type=service --state=running --no-pager | head -50 =====
+  UNIT                          LOAD   ACTIVE SUB     DESCRIPTION
+  auditd.service                loaded active running Security Auditing Service
+  containerd.service            loaded active running containerd container runtime
+  cron.service                  loaded active running Regular background program processing daemon
+  dbus.service                  loaded active running D-Bus System Message Bus
+  docker.service                loaded active running Docker Application Container Engine
+  fwupd.service                 loaded active running Firmware update daemon
+  getty@tty1.service            loaded active running Getty on tty1
+  iucvserd.service              loaded active running IUCV agent service which is used to communicate with zthin server for z/VM.
+  ModemManager.service          loaded active running Modem Manager
+  multipathd.service            loaded active running Device-Mapper Multipath Device Controller
+  ovs-vswitchd.service          loaded active running Open vSwitch Forwarding Unit
+  ovsdb-server.service          loaded active running Open vSwitch Database Unit
+  polkit.service                loaded active running Authorization Manager
+  rsyslog.service               loaded active running System Logging Service
+  serial-getty@hvc0.service     loaded active running Serial Getty on hvc0
+  serial-getty@ttyS0.service    loaded active running Serial Getty on ttyS0
+  serial-getty@ttysclp0.service loaded active running Serial Getty on ttysclp0
+  snapd.service                 loaded active running Snap Daemon
+  ssh.service                   loaded active running OpenBSD Secure Shell server
+  systemd-hostnamed.service     loaded active running Hostname Service
+  systemd-journald.service      loaded active running Journal Service
+  systemd-logind.service        loaded active running User Login Management
+  systemd-networkd.service      loaded active running Network Configuration
+  systemd-resolved.service      loaded active running Network Name Resolution
+  systemd-timesyncd.service     loaded active running Network Time Synchronization
+  systemd-udevd.service         loaded active running Rule-based Manager for Device Events and Files
+  udisks2.service               loaded active running Disk Manager
+  unattended-upgrades.service   loaded active running Unattended Upgrades Shutdown
+  user@1000.service             loaded active running User Manager for UID 1000
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+29 loaded units listed.
