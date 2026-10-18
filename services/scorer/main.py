@@ -42,7 +42,7 @@ DATA_DIR = os.environ.get("DATA_DIR", "/data/sepsis")
 MODEL_DIR = os.environ.get("MODELS_DIR", f"{DATA_DIR}/models")
 RUNTIME = os.environ.get("RUNTIME_DIR", f"{DATA_DIR}/runtime")
 GRANITE_URL = os.environ.get("GRANITE_URL", "")            # e.g. http://granite:8080/note ; empty = template notes
-NOTE_MAX_WAIT = float(os.environ.get("NOTE_MAX_WAIT_SEC", "60"))  # older alerts get the template note right away
+NOTE_MAX_WAIT = float(os.environ.get("NOTE_MAX_WAIT_SEC", "20"))  # Granite skips alerts older than this
 DEVICE = "nnpa" if NNPA_OK and os.environ.get("USE_NNPA", "1") == "1" else "cpu"
 os.makedirs(RUNTIME, exist_ok=True)
 
@@ -125,29 +125,33 @@ def _append(path: str, rec: dict):
         f.write(json.dumps(rec, default=float) + "\n")
 
 
+def _write_note(job: dict, facts: list, note: str, source: str, raw=None):
+    _append(f"{RUNTIME}/notes.jsonl", {"patient_token": job["patient_token"], "bed": job["bed"], "hour": job["hour"],
+                                        "note": note, "source": source, "facts": facts, "granite_raw": raw,
+                                        "ts": datetime.now(timezone.utc).isoformat()})
+
+
 def note_worker():
+    """Granite runs in the background. The template note is already on screen; a Granite note that passes
+    the fact check replaces it (the dashboard shows the latest note of the stay)."""
     while True:
         job = _note_q.get()
-        facts = notes.build_facts(job, job.get("risk_before"))
-        text, source, raw = None, "template", None
+        facts = job["facts"]
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(job["ts"])).total_seconds()
-        if GRANITE_URL and age > NOTE_MAX_WAIT:      # backlog (e.g. many beds turn Critical at start-up): don't let notes lag
-            source = "template_backlog"
-        elif GRANITE_URL:
-            try:
-                r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=90)
-                r.raise_for_status()
-                raw = r.json().get("note", "")
-                text, why = notes.validate_note(raw, job["bed"], facts, r.json().get("examples", []))
-                source = "granite" if text else "template_rejected"
-                if why:
-                    print(f"granite note rejected ({why}); using template", flush=True)
-            except Exception as e:  # Granite down or slow: the alert already went out, use the template
-                print("granite unavailable:", e)
-        _append(f"{RUNTIME}/notes.jsonl", {"patient_token": job["patient_token"], "bed": job["bed"],
-                                            "hour": job["hour"], "note": text or notes.template_note(job["bed"], facts),
-                                            "source": source, "facts": facts, "granite_raw": raw,
-                                            "ts": datetime.now(timezone.utc).isoformat()})
+        if age > NOTE_MAX_WAIT:                     # stale alert: the patient keeps the template note
+            continue
+        try:
+            r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=90)
+            r.raise_for_status()
+            raw = r.json().get("note", "")
+            text, why = notes.validate_note(raw, job["bed"], facts, r.json().get("examples", []))
+            if text:
+                _write_note(job, facts, text, "granite", raw)
+            else:
+                print(f"granite note rejected ({why}); keeping the template", flush=True)
+                _write_note(job, facts, notes.template_note(job["bed"], facts), "template_rejected", raw)
+        except Exception as e:  # Granite down or slow: the template note is already shown
+            print("granite unavailable:", e, flush=True)
 
 
 threading.Thread(target=note_worker, daemon=True).start()
@@ -232,11 +236,15 @@ def score_batch(batch: Batch):
         _risk_hist[key] = hist + [(r.hour, rec["risk"])]
         prev = _last_level.get(key)
         if rec["level"] == "Critical" and prev != "Critical":
-            try:
-                _note_q.put_nowait({**rec, "drivers": rec["top_features"], "vitals": vitals,
-                                    "risk_before": hist[0][1] if hist else None})
-            except queue.Full:
-                pass
+            job = {**rec, "drivers": rec["top_features"], "vitals": vitals}
+            job["facts"] = notes.build_facts(job, hist[0][1] if hist else None)
+            _write_note(job, job["facts"], notes.template_note(r.bed, job["facts"]),   # instant note with the alert
+                        "template_pending" if GRANITE_URL else "template")
+            if GRANITE_URL:
+                try:
+                    _note_q.put_nowait(job)
+                except queue.Full:
+                    pass
         _last_level[key] = rec["level"]
         results.append(rec)
 
