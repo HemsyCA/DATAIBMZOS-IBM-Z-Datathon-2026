@@ -143,7 +143,7 @@ async function tick(){
   const src={granite:"IBM Granite (llama.cpp + zDNN), checked against the data",template_rejected:"template (Granite note failed the fact check)",template_backlog:"template (Granite busy with earlier alerts)",template_pending:"template (written instantly; IBM Granite draft in progress, replaced if it passes the fact check)"}[b.note_source]||"template (Granite unavailable)";
   document.getElementById("right").innerHTML=`<b>Why this alert — bed ${b.bed} (${b.level}, risk ${Math.round(b.risk*100)}%)</b>`+
     (drivers?`<ul>${drivers}</ul>`:`<p class="small">Top drivers are shown for Critical patients.</p>`)+
-    `<b>Handoff note</b>`+(b.note?`<div class="note">${esc(b.note)}</div><p class="small">Written when the patient became Critical (ICU hour ${b.note_hour}). Source: ${src}</p>`:`<p class="small">A note is written when a patient becomes Critical.</p>`)+
+    `<b>Handoff note</b>`+(b.note_source==="template_pending"?`<div class="note"><i>IBM Granite is writing the handoff note on the z17 (llama.cpp + zDNN)…</i></div><p class="small">Patient became Critical at ICU hour ${b.note_hour}. The note appears only after it passes the fact check.</p>`:b.note?`<div class="note">${esc(b.note)}</div><p class="small">Written when the patient became Critical (ICU hour ${b.note_hour}). Source: ${src}</p>`:`<p class="small">A note is written when a patient becomes Critical.</p>`)+
     `<p class="small">Scores: XGBoost ${(b.p_xgb??0).toFixed(2)} · MLP on ${esc(String(st.device||"cpu").toUpperCase())} ${(b.p_mlp??0).toFixed(2)} · alert model: ${esc(st.model||"")}</p>`;
 }
 tick();setInterval(tick,REFRESH_MS);

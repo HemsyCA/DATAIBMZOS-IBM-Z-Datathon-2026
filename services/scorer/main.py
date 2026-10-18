@@ -43,6 +43,7 @@ MODEL_DIR = os.environ.get("MODELS_DIR", f"{DATA_DIR}/models")
 RUNTIME = os.environ.get("RUNTIME_DIR", f"{DATA_DIR}/runtime")
 GRANITE_URL = os.environ.get("GRANITE_URL", "")            # e.g. http://granite:8080/note ; empty = template notes
 NOTE_MAX_WAIT = float(os.environ.get("NOTE_MAX_WAIT_SEC", "120"))  # Granite skips alerts older than this
+GRANITE_TRIES = int(os.environ.get("GRANITE_TRIES", "3"))           # drafts per alert before using the template
 DEVICE = "nnpa" if NNPA_OK and os.environ.get("USE_NNPA", "1") == "1" else "cpu"
 os.makedirs(RUNTIME, exist_ok=True)
 
@@ -132,26 +133,36 @@ def _write_note(job: dict, facts: list, note: str, source: str, raw=None):
 
 
 def note_worker():
-    """Granite runs in the background. The template note is already on screen; a Granite note that passes
-    the fact check replaces it (the dashboard shows the latest note of the stay)."""
+    """Granite writes the note in the background (the dashboard shows "IBM Granite is writing…" meanwhile).
+    Up to GRANITE_TRIES drafts; the first one that passes the fact check is shown. Otherwise the template."""
     while True:
         job = _note_q.get()
         facts = job["facts"]
+        tmpl = notes.template_note(job["bed"], facts)
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(job["ts"])).total_seconds()
-        if age > NOTE_MAX_WAIT:                     # stale alert: the patient keeps the template note
+        if age > NOTE_MAX_WAIT:                     # stale alert: fall back to the template
+            _write_note(job, facts, tmpl, "template_backlog")
             continue
-        try:
-            r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=90)
-            r.raise_for_status()
-            raw = r.json().get("note", "")
-            text, why = notes.validate_note(raw, job["bed"], facts, r.json().get("examples", []))
-            if text:
-                _write_note(job, facts, text, "granite", raw)
-            else:
-                print(f"granite note rejected ({why}); keeping the template", flush=True)
-                _write_note(job, facts, notes.template_note(job["bed"], facts), "template_rejected", raw)
-        except Exception as e:  # Granite down or slow: the template note is already shown
-            print("granite unavailable:", e, flush=True)
+        raw, why = None, "Granite unavailable"
+        for attempt in range(GRANITE_TRIES):
+            try:
+                r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=90)
+                r.raise_for_status()
+                raw = r.json().get("note", "")
+                text, why = notes.validate_note(raw, job["bed"], facts, r.json().get("examples", []))
+                if text:
+                    _write_note(job, facts, text, "granite", raw)
+                    break
+                print(f"granite draft {attempt + 1} rejected ({why})", flush=True)
+            except Exception as e:  # Granite down or slow
+                print("granite unavailable:", e, flush=True)
+                why = "Granite unavailable"
+                break
+        else:
+            _write_note(job, facts, tmpl, "template_rejected", raw)
+            continue
+        if why == "Granite unavailable":
+            _write_note(job, facts, tmpl, "template")
 
 
 threading.Thread(target=note_worker, daemon=True).start()
