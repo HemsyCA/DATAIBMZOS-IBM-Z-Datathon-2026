@@ -5,7 +5,7 @@ Every patient is scored every hour. The nurse sees who to check first, why, and 
 
 IBM Z Datathon 2026. Theme 1: Real-Time AI for Critical Decisions, with elements of Theme 2: AI Secured. Event code SSF2026.
 
-- Demo video: _add YouTube link here_
+- Demo video: [watch on Google Drive](https://drive.google.com/file/d/13WzqOCzfd34phnHl0JXDJjZPALc0JetP/view?usp=sharing)
 - Pitch deck: [docs/SepsisWatchZ_pitch_deck.pdf](docs/SepsisWatchZ_pitch_deck.pdf)
 
 ![SepsisWatch Z bed board running on the IBM z17](docs/figures/dashboard.png)
