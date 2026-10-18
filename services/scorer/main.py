@@ -42,6 +42,7 @@ DATA_DIR = os.environ.get("DATA_DIR", "/data/sepsis")
 MODEL_DIR = os.environ.get("MODELS_DIR", f"{DATA_DIR}/models")
 RUNTIME = os.environ.get("RUNTIME_DIR", f"{DATA_DIR}/runtime")
 GRANITE_URL = os.environ.get("GRANITE_URL", "")            # e.g. http://granite:8080/note ; empty = template notes
+NOTE_MAX_WAIT = float(os.environ.get("NOTE_MAX_WAIT_SEC", "60"))  # older alerts get the template note right away
 DEVICE = "nnpa" if NNPA_OK and os.environ.get("USE_NNPA", "1") == "1" else "cpu"
 os.makedirs(RUNTIME, exist_ok=True)
 
@@ -129,7 +130,10 @@ def note_worker():
         job = _note_q.get()
         facts = notes.build_facts(job, job.get("risk_before"))
         text, source, raw = None, "template", None
-        if GRANITE_URL:
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(job["ts"])).total_seconds()
+        if GRANITE_URL and age > NOTE_MAX_WAIT:      # backlog (e.g. many beds turn Critical at start-up): don't let notes lag
+            source = "template_backlog"
+        elif GRANITE_URL:
             try:
                 r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=90)
                 r.raise_for_status()

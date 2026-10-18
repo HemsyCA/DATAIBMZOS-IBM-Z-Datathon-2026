@@ -42,16 +42,18 @@ EXAMPLES = [
 ]
 
 app = FastAPI(title="SepsisWatch Z · Granite notes")
-_llm, _lock = None, threading.Lock()
+_llm, _lock, _load_lock = None, threading.Lock(), threading.Lock()
 
 
 def llm():
     global _llm
-    if _llm is None:
+    with _load_lock:          # the warm-up thread and the first request must not load the model twice
+        if _llm is not None:
+            return _llm
         from llama_cpp import Llama
         print("Loading Granite from", MODEL_PATH, flush=True)
         _llm = Llama(model_path=MODEL_PATH, n_ctx=1024, n_threads=THREADS, verbose=True)  # verbose: shows zDNN backend
-    return _llm
+        return _llm
 
 
 def prompt(facts: str, shots) -> str:

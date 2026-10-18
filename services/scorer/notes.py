@@ -194,14 +194,24 @@ def _direction_conflict(note: str, ftext: str):
     return None
 
 
+# Granite likes to invent history ("first time in two weeks", "since admission"): the facts never contain it
+INVENTED_TIME = r"\b(weeks?|days?|months?|yesterday|overnight|admission|admitted|first time|previous\w*|history)\b"
+WORD_NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+             "ten": 10, "eleven": 11, "twelve": 12, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "hundred": 100}
+
+
 def validate_note(raw: str, bed, facts: list[str], examples: list[str]):
     """Return (note, None) if the Granite text can be shown, else (None, reason)."""
     text = clean_note(raw)
     ftext = facts_text(facts).lower()
     if len(text) < 40:
         return None, "too short or looping"
+    m = re.search(INVENTED_TIME, text.lower())
+    if m:
+        return None, f"invented time reference '{m.group(0)}'"
     allowed = [float(x) for x in _NUM.findall(ftext)] + [6.0]
-    for x in _NUM.findall(text):
+    spelled = [str(WORD_NUMS[w]) for w in re.findall(r"[a-z]+", text.lower()) if w in WORD_NUMS]
+    for x in _NUM.findall(text) + spelled:
         v = float(x)
         if not any(abs(v - a) <= max(0.6, 0.02 * abs(a)) for a in allowed):
             return None, f"number {x} not in the facts"
