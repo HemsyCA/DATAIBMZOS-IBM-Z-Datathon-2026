@@ -77,6 +77,6 @@ Optional manual override: `CRITICAL_THRESHOLD=0.6` / `WATCH_THRESHOLD=0.4` in `.
 
 ## Notes
 
-- `cryptography` has no pip wheel for s390x. If the base image does not include it, `/health` shows `"encryption": false` and age/sex are **not stored at all** (never in plaintext). Install it in the image to turn encryption on.
+- `cryptography` has no pip wheel for s390x, so `security/encryption.py` calls OpenSSL's `libcrypto` directly (ctypes, `EVP_aes_256_gcm`), which runs on CPACF. `/health` shows `"encryption_backend": "openssl-libcrypto"`. The format is identical to `cryptography`'s AESGCM. If no backend is found, age/sex are not stored at all (never in plaintext).
 - Restarting with new keys (`.env`) changes all tokens; delete `~/shared/sepsis/runtime/*.jsonl` and `audit/` for a clean demo.
 - "Why this alert" and Granite notes use **physiology only**: measurement-pattern (`*_hours_since`, `*_measured`) and administrative fields (`Unit*`, `HospAdmTime`) are excluded from explanations even though the model uses them.

@@ -121,7 +121,7 @@ async function tick(){
   let d;try{d=await (await fetch("api/state")).json()}catch(e){return}
   const beds=d.beds.filter(b=>!b.empty),st=d.status||{},cnt={Critical:0,Watch:0,Stable:0};beds.forEach(b=>cnt[b.level]++);
   const lat=((st.xgb_ms||0)+(st.mlp_ms||0)).toFixed(1);
-  document.getElementById("enc").textContent=st.encryption?"age and sex are stored encrypted (AES-256-GCM, CPACF).":"age and sex are not stored.";
+  document.getElementById("enc").textContent=st.encryption?`age and sex are stored encrypted (AES-256-GCM via ${st.encryption_backend==="openssl-libcrypto"?"OpenSSL → CPACF":esc(st.encryption_backend)}).`:"age and sex are not stored.";
   document.getElementById("kpis").innerHTML=
     [["Critical",cnt.Critical],["Watch",cnt.Watch],["Stable",cnt.Stable],["Model · NN device",`${String(st.model||"–")} · ${String(st.device||"–").toUpperCase()}`],
      ["Ward scoring latency",`${lat} ms`]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join("")+

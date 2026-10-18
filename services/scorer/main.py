@@ -188,7 +188,7 @@ class Batch(BaseModel):
 def health():
     return {"status": "ok", "model": MODEL, "device": DEVICE, "nnpa_available": NNPA_OK, "n_features": len(FEATURES),
             "weights": {"xgb": W_XGB, "mlp": W_MLP}, "critical": CRITICAL, "watch": WATCH,
-            "granite": bool(GRANITE_URL), "encryption": encryption.AVAILABLE}
+            "granite": bool(GRANITE_URL), "encryption": encryption.AVAILABLE, "encryption_backend": encryption.BACKEND}
 
 
 def _matrix(rows: list[Row]) -> np.ndarray:
@@ -254,7 +254,7 @@ def score_batch(batch: Batch):
         _last_level[key] = rec["level"]
         results.append(rec)
 
-    status = {"ts": ts, "model": MODEL, "device": DEVICE, "encryption": encryption.AVAILABLE, "batch_size": len(rows), "xgb_ms": round(xgb_ms, 3),
+    status = {"ts": ts, "model": MODEL, "device": DEVICE, "encryption": encryption.AVAILABLE, "encryption_backend": encryption.BACKEND, "batch_size": len(rows), "xgb_ms": round(xgb_ms, 3),
               "mlp_ms": round(mlp_ms, 3), "counts": {lv: int((level == lv).sum()) for lv in ("Critical", "Watch", "Stable")}}
     with _io_lock, open(f"{RUNTIME}/status.json", "w") as f:
         json.dump(status, f)
