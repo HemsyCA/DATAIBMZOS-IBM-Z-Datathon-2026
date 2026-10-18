@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Descarga PhysioNet Challenge 2019 (40,336 archivos .psv) desde el bucket publico de S3.
-# Uso: bash data/download_physionet.sh [carpeta_destino]
+# Downloads the PhysioNet Challenge 2019 dataset (40,336 .psv files) from the public S3 bucket.
+# Usage: bash data/download_physionet.sh [target_folder]
 set -euo pipefail
 
 BASE="https://physionet-open.s3.amazonaws.com"
@@ -10,7 +10,7 @@ OUT="${1:-$HOME/shared/sepsis/data/raw}"
 mkdir -p "$OUT"
 cd "$OUT"
 
-# 1. Listar todos los archivos del bucket (S3 devuelve 1000 por pagina)
+# 1. List every file in the bucket (S3 returns 1000 keys per page)
 : > keys.txt
 MARKER=""
 while :; do
@@ -22,12 +22,12 @@ while :; do
     break
   fi
 done
-echo "Archivos listados: $(wc -l < keys.txt)"
+echo "Files listed: $(wc -l < keys.txt)"
 
-# 2. Descargar en paralelo (32 a la vez); -z omite los que ya existen si se re-ejecuta
+# 2. Download in parallel (32 at a time); files that already exist are skipped on re-runs
 awk -v B="$BASE" -v P="$PREFIX" '{ print B "/" $0, substr($0, length(P) + 1) }' keys.txt \
   | xargs -n 2 -P 32 sh -c '[ -s "$2" ] || curl -s --retry 3 --create-dirs -o "$2" "$1"' _
 
-echo "Descargados setA: $(find training_setA -name '*.psv' | wc -l)"
-echo "Descargados setB: $(find training_setB -name '*.psv' | wc -l)"
+echo "Downloaded setA: $(find training_setA -name '*.psv' | wc -l)"
+echo "Downloaded setB: $(find training_setB -name '*.psv' | wc -l)"
 du -sh "$OUT"

@@ -1,0 +1,21 @@
+# SepsisWatch Z — Python dependencies (IBM LinuxONE, s390x)
+# The Jupyter "notebook" container already provides numpy, pandas, scikit-learn, xgboost,
+# torch with IBM torch_nnpa, and matplotlib. Install the rest with pip inside the container.
+
+# Data and models (preinstalled in the container)
+numpy
+pandas
+scikit-learn
+xgboost
+torch            # IBM build with torch_nnpa for the Telum II NNPA
+matplotlib
+
+# Services (pip works on s390x)
+fastapi
+uvicorn
+streamlit
+requests
+
+# Not available on pip for s390x:
+#   cryptography -> use an Ubuntu 24.04 container: apt install python3-cryptography
+#   pyarrow, duckdb -> replaced by pandas pickle files

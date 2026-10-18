@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Data and model artifacts stay on the VM, outside the repo
+*.pkl
+*.pt
+*.npz
+sepsis/
+models/

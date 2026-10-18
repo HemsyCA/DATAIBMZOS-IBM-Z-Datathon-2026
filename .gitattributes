@@ -1,0 +1,8 @@
+# Keep LF line endings in the repo so files work the same on Windows laptops and the s390x VM
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.jpg binary
+*.pkl binary
+*.pt binary
+*.npz binary
