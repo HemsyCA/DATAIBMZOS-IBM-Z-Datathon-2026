@@ -1,7 +1,7 @@
 """IBM Granite handoff-note service (llama.cpp built with zDNN on IBM Z).
 
 POST /note {"facts": "..."} -> {"note": "..."}
-Input carries no identifiers: bed number, hours in ICU, risk and the top clinical drivers only.
+Input carries no identifiers: hours in ICU, risk and the top clinical drivers only (the scorer adds the bed number and\nrejects any note with numbers that are not in the facts).
 The model is a small *base* model, so it is guided with a fixed few-shot template.
 """
 import os
@@ -14,13 +14,13 @@ DATA_DIR = os.environ.get("DATA_DIR", "/data/sepsis")
 MODEL_PATH = os.environ.get("GRANITE_MODEL", f"{DATA_DIR}/models/granite-4.0-h-350m-base-be.f16.gguf")
 THREADS = int(os.environ.get("GRANITE_THREADS", "2"))
 
-PROMPT = """Write a short, factual ICU nursing handoff note (max 60 words). Do not diagnose. Do not prescribe drugs.
+PROMPT = """Write a short, factual ICU nursing handoff note (max 60 words). Use only the numbers given in the facts. Do not diagnose. Do not prescribe drugs.
 
-Facts: Bed 3. 30 h in ICU. Sepsis risk 0.71 (Critical). Respiratory rate (6 h mean) 26.4; Heart rate 118.0; Temperature 38.6.
-Note: Bed 3 has a rising sepsis risk (Critical). Respiratory rate has averaged 26 over the last 6 hours, heart rate is 118 and temperature 38.6 °C. Please reassess at the bedside and follow the unit's sepsis protocol.
+Facts: 30 h in ICU. Sepsis risk 0.71 (Critical). Respiratory rate (6 h mean) 26.4; Heart rate 118.0; Temperature 38.6.
+Note: Sepsis risk is rising (Critical). Respiratory rate has averaged 26.4 over the last 6 hours, heart rate is 118 and temperature 38.6 °C. Please reassess at the bedside and follow the unit's sepsis protocol.
 
-Facts: Bed 7. 52 h in ICU. Sepsis risk 0.64 (Critical). Mean arterial pressure (6 h min) 61.0; Lactate 3.1; Heart rate (6 h change) 14.0.
-Note: Bed 7 is now Critical for sepsis risk. Mean arterial pressure dropped to 61, lactate is 3.1 and heart rate rose by 14 in 6 hours. Please reassess at the bedside and follow the unit's sepsis protocol.
+Facts: 52 h in ICU. Sepsis risk 0.64 (Critical). Mean arterial pressure (6 h min) 61.0; Lactate 3.1; Heart rate (6 h change) 14.0.
+Note: Now Critical for sepsis risk. Mean arterial pressure dropped to 61, lactate is 3.1 and heart rate rose by 14 in 6 hours. Please reassess at the bedside and follow the unit's sepsis protocol.
 
 Facts: {facts}
 Note:"""

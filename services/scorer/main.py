@@ -15,6 +15,7 @@ os.environ.setdefault("TORCHDYNAMO_DISABLE", "1")   # before importing torch (IB
 
 import json
 import queue
+import re
 import threading
 import time
 from datetime import datetime, timezone
@@ -128,18 +129,37 @@ def template_note(job: dict) -> str:
             f"Main changes: {drivers}. Please reassess at the bedside and follow the unit's sepsis protocol.")
 
 
+_NUM = re.compile(r"\d+(?:\.\d+)?")
+
+
+def validate_note(text: str, job: dict, facts: str):
+    """Granite is a small base model: never trust identifiers or numbers it writes.
+    The bed number is set by the system, and every number in the note must come from the facts."""
+    text = re.sub(r"(?i)\bbed\s*\d+\b", "This patient", text).strip()
+    allowed = [float(x) for x in _NUM.findall(facts)]
+    for x in _NUM.findall(text):
+        v = float(x)
+        if not any(abs(v - a) <= max(0.6, 0.02 * abs(a)) for a in allowed):
+            return None, f"number {x} not in the facts"
+    if len(text) < 20:
+        return None, "too short"
+    return f"Bed {job['bed']}: {text}", None
+
+
 def note_worker():
     while True:
         job = _note_q.get()
         text, source = None, "template"
         if GRANITE_URL:
             try:
-                facts = (f"Bed {job['bed']}. {job['icu_hours']} h in ICU. Sepsis risk {job['risk']:.2f} (Critical). "
+                facts = (f"{job['icu_hours']} h in ICU. Sepsis risk {job['risk']:.2f} (Critical). "
                          + "; ".join(f"{d['label']} {d['value']}" for d in job["drivers"]) + ".")
                 r = requests.post(GRANITE_URL, json={"facts": facts}, timeout=90)
                 r.raise_for_status()
-                text = r.json().get("note", "").strip() or None
-                source = "granite" if text else "template"
+                text, why = validate_note(r.json().get("note", ""), job, facts)
+                source = "granite" if text else "template_rejected"
+                if why:
+                    print(f"granite note rejected ({why}); using template", flush=True)
             except Exception as e:  # Granite down or slow: the alert already went out, use the template
                 print("granite unavailable:", e)
         _append(f"{RUNTIME}/notes.jsonl", {"patient_token": job["patient_token"], "bed": job["bed"],
