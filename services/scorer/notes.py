@@ -115,7 +115,7 @@ def build_facts(job: dict, risk_before: float | None) -> list[str]:
             seen.add(base)
     for base in VITAL_ORDER:                          # current vitals out of range that the drivers did not cover
         v = (job.get("vitals") or {}).get(base)
-        if base not in seen and v is not None and _status(base, v) != "normal" and len(facts) < 6:
+        if base not in seen and v is not None and _status(base, v) != "normal" and len(facts) < 5:
             facts.append(phrase(base, v))
     return facts
 

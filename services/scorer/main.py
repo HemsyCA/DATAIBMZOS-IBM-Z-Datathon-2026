@@ -43,7 +43,8 @@ MODEL_DIR = os.environ.get("MODELS_DIR", f"{DATA_DIR}/models")
 RUNTIME = os.environ.get("RUNTIME_DIR", f"{DATA_DIR}/runtime")
 GRANITE_URL = os.environ.get("GRANITE_URL", "")            # e.g. http://granite:8080/note ; empty = template notes
 NOTE_MAX_WAIT = float(os.environ.get("NOTE_MAX_WAIT_SEC", "120"))  # Granite skips alerts older than this
-GRANITE_TRIES = int(os.environ.get("GRANITE_TRIES", "3"))           # drafts per alert before using the template
+GRANITE_TRIES = int(os.environ.get("GRANITE_TRIES", "2"))           # drafts per alert before using the template
+GRANITE_TIMEOUT = float(os.environ.get("GRANITE_TIMEOUT_SEC", "20"))  # max seconds per Granite draft
 DEVICE = "nnpa" if NNPA_OK and os.environ.get("USE_NNPA", "1") == "1" else "cpu"
 os.makedirs(RUNTIME, exist_ok=True)
 
@@ -146,7 +147,7 @@ def note_worker():
         raw, why = None, "Granite unavailable"
         for attempt in range(GRANITE_TRIES):
             try:
-                r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=90)
+                r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=GRANITE_TIMEOUT)
                 r.raise_for_status()
                 raw = r.json().get("note", "")
                 text, why = notes.validate_note(raw, job["bed"], facts, r.json().get("examples", []))
