@@ -3,7 +3,7 @@
 Four services from **one image** (`services/Dockerfile`, built on the IBM LinuxONE Jupyter image), all inside the z17 VM. No patient data leaves the machine.
 
 ```
-replayer ──POST /score_batch (12 beds / clinical hour)──▶ scorer ──▶ runtime/scores.jsonl ◀── dashboard (Streamlit :8501)
+replayer ──POST /score_batch (12 beds / clinical hour)──▶ scorer ──▶ runtime/scores.jsonl ◀── dashboard (FastAPI + HTML :8501)
                                                            │  XGBoost (CPU, SIMD) + MLP on the Telum II NNPA
                                                            ├──▶ audit/alerts.jsonl  (SHA3-256 hash chain, Watch + Critical)
                                                            └──▶ granite (:8080, llama.cpp + zDNN) ──▶ runtime/notes.jsonl
@@ -14,7 +14,7 @@ replayer ──POST /score_batch (12 beds / clinical hour)──▶ scorer ─�
 | `scorer` | `services/scorer/main.py` | FastAPI. Scores a whole ward per call: XGBoost + MLP on `nnpa`, ensemble weights and Critical/Watch thresholds from `thresholds.json`. Tokenizes patient IDs (HMAC-SHA256), encrypts age/sex (AES-256-GCM), appends alerts to the audit chain, queues a Granite note when a patient becomes Critical. |
 | `replayer` | `services/replayer/main.py` | Replays hospital B (never seen in training) as a 12-bed ward, one clinical hour per second. 16 of the 48 demo patients develop sepsis and start 24 h before onset. |
 | `granite` | `services/granite/main.py` | IBM Granite 4.0 350M (big-endian GGUF for s390x) via llama.cpp with zDNN. Writes a ≤ 60-word handoff note from de-identified facts. If it is down or slow, the scorer writes a fixed template note instead (the alert never waits). |
-| `dashboard` | `services/dashboard/app.py` | 12-bed board coloured by level, risk and vital-sign trends per bed, "why this alert" (clinical drivers only) and the handoff note. Reads stored results; never calls the models. |
+| `dashboard` | `services/dashboard/main.py` | 12-bed board coloured by level, risk and vital-sign trends per bed, "why this alert" (clinical drivers only) and the handoff note. Reads stored results; never calls the models. Plain FastAPI + HTML because Streamlit needs `pyarrow`, which has no s390x build. |
 | security | `security/` | `tokens.py`, `encryption.py`, `audit.py`, `verify_audit.py`. |
 
 Everything the services read or write lives in `~/shared/sepsis/` on the VM (outside the repo): `models/` (from notebooks 03–05), `runtime/` and `audit/`.

@@ -5,7 +5,8 @@ ARG BASE_IMAGE=registry.linuxone.cloud.marist.edu/l1cc/jupyterlab-image-s390x:la
 FROM ${BASE_IMAGE}
 
 USER root
-RUN python -m pip install --no-cache-dir fastapi uvicorn streamlit requests
+# Only pure-Python/available-on-s390x packages (Streamlit is NOT usable: it needs pyarrow, which has no s390x build)
+RUN python -m pip install --no-cache-dir fastapi uvicorn requests
 
 WORKDIR /app
 COPY security /app/security

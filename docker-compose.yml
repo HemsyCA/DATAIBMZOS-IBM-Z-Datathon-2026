@@ -42,6 +42,5 @@ services:
 
   dashboard:
     <<: *app
-    command: ["streamlit", "run", "services/dashboard/app.py", "--server.port=8501",
-              "--server.address=0.0.0.0", "--server.headless=true", "--browser.gatherUsageStats=false"]
+    command: ["uvicorn", "services.dashboard.main:app", "--host", "0.0.0.0", "--port", "8501"]
     ports: ["127.0.0.1:8501:8501"]
