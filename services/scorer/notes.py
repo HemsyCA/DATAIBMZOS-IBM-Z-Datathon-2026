@@ -195,7 +195,7 @@ def _direction_conflict(note: str, ftext: str):
 
 
 # Granite likes to invent history ("first time in two weeks", "since admission"): the facts never contain it
-INVENTED_TIME = r"\b(weeks?|days?|months?|yesterday|overnight|admission|admitted|first time|previous\w*|history)\b"
+INVENTED_TIME = r"\b(weeks?|days?|months?|yesterday|overnight|admission|admitted|first time|previous\w*|history|an hour|minutes?)\b"
 WORD_NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
              "ten": 10, "eleven": 11, "twelve": 12, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "hundred": 100}
 
@@ -209,6 +209,11 @@ def validate_note(raw: str, bed, facts: list[str], examples: list[str]):
     m = re.search(INVENTED_TIME, text.lower())
     if m:
         return None, f"invented time reference '{m.group(0)}'"
+    stay = re.search(r"(\d+) h in icu", ftext)
+    for said in re.findall(r"\b(\d+|[a-z]+) (?:h|hours?) (?:in|into) (?:the )?(?:icu|stay)", text.lower()):
+        n = int(said) if said.isdigit() else WORD_NUMS.get(said)
+        if stay and n is not None and n != int(stay.group(1)):
+            return None, f"says {said} h in ICU, the facts say {stay.group(1)}"
     allowed = [float(x) for x in _NUM.findall(ftext)] + [6.0]
     spelled = [str(WORD_NUMS[w]) for w in re.findall(r"[a-z]+", text.lower()) if w in WORD_NUMS]
     for x in _NUM.findall(text) + spelled:
