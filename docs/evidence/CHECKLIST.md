@@ -43,9 +43,9 @@ All screenshots must show **English** output.
 ## F. Product
 
 - [x] `22-dashboard-critical.png` — dashboard with a Critical patient and its Granite note
-- [ ] `23-github-repo.png` — public repository with README
+- [x] `23-github-repo.png` — public repository with README
 
 ## Before submitting
 
-- [ ] Repository set to **public**
+- [x] Repository set to **public**
 - [ ] All screenshots committed and referenced in the README / deck
