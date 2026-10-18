@@ -28,6 +28,22 @@ RANGES = {
     "BaseExcess": ("base excess", "mmol/L", -2, None),
     "FiO2": ("FiO2", "", None, 0.4),
     "shock_index": ("shock index", "", None, 0.9),
+    "Calcium": ("calcium", "mg/dL", 8.5, 10.5),
+    "Phosphate": ("phosphate", "mg/dL", 2.5, 4.5),
+    "Magnesium": ("magnesium", "mg/dL", 1.7, 2.4),
+    "Potassium": ("potassium", "mmol/L", 3.5, 5.0),
+    "Chloride": ("chloride", "mmol/L", 98, 107),
+    "Hct": ("hematocrit", "%", 36, 50),
+    "Hgb": ("hemoglobin", "g/dL", 12, 17),
+    "PTT": ("PTT", "s", 25, 35),
+    "Fibrinogen": ("fibrinogen", "mg/dL", 200, 400),
+    "AST": ("AST", "U/L", None, 40),
+    "Alkalinephos": ("alkaline phosphatase", "U/L", None, 120),
+    "Bilirubin_direct": ("direct bilirubin", "mg/dL", None, 0.3),
+    "TroponinI": ("troponin", "ng/mL", None, 0.04),
+    "PaCO2": ("PaCO2", "mmHg", 35, 45),
+    "SaO2": ("arterial O2 saturation", "%", 92, None),
+    "EtCO2": ("end-tidal CO2", "mmHg", 35, 45),
 }
 FLAGS = {"high_lactate": "lactate above 2 mmol/L", "low_platelets": "platelets below 150 x10^9/L",
          "high_creatinine": "creatinine above 1.2 mg/dL", "high_bilirubin": "bilirubin above 1.2 mg/dL"}
@@ -90,10 +106,13 @@ def build_facts(job: dict, risk_before: float | None) -> list[str]:
     facts = [trend, f"{job['icu_hours']} h in ICU"]
     seen = set()
     for d in job.get("drivers", []):
+        base = d["feature"].split("_6h_")[0]
+        if base in seen and not d["feature"].endswith("_6h_change"):
+            continue                                  # one level per variable (e.g. not both "Temp" and "Temp_6h_max")
         p = phrase(d["feature"], d.get("value"))
         if p:
             facts.append(p)
-            seen.add(d["feature"].split("_6h_")[0])
+            seen.add(base)
     for base in VITAL_ORDER:                          # current vitals out of range that the drivers did not cover
         v = (job.get("vitals") or {}).get(base)
         if base not in seen and v is not None and _status(base, v) != "normal" and len(facts) < 6:
@@ -122,6 +141,11 @@ TOPICS = {
     "oxygen": ["o2", "oxygen", "saturation", "spo2", "fio2"], "platelets": ["platelet"],
     "kidney": ["creatinine", "kidney", "renal", r"\bbun\b", "urine"], "liver": ["bilirubin", "liver", "jaundice"],
     "white": ["white cell", r"\bwbc\b", "leukocyt"], "glucose": ["glucose"], "shock": ["shock index"],
+    "calcium": ["calcium"], "phosphate": ["phosphate"], "magnesium": ["magnesium"], "potassium": ["potassium"],
+    "chloride": ["chloride"], "blood count": ["hematocrit", "hemoglobin", "haemoglobin", "anaemi", "anemi"],
+    "clotting": ["ptt", "fibrinogen", "clotting", "coagul", "inr"], "liver enzymes": [r"\bast\b", "alkaline"],
+    "heart injury": ["troponin"], "co2": ["paco2", "co2", "carbon dioxide"], "ph": [r"\bph\b", "acidosis", "bicarbonate", "base excess"],
+    "sirs": ["sirs"], "qsofa": ["qsofa"],
     "drugs": ["antibiotic", "vasopressor", "noradrenaline", "norepinephrine", "fluid bolus", r"\bmg\b dose"],
 }
 
@@ -134,6 +158,7 @@ def clean_note(text: str) -> str:
     """Remove the classic small-model failures: repeated sentences, a cut-off last sentence, bed numbers."""
     text = re.sub(r"(?i)\bbed\s*\d+\b", "this patient", text)
     text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", text)       # tokenizer glitch: "about68%" -> "about 68%"
     sentences, out = re.split(r"(?<=[.!?])\s+", text), []
     for s in sentences:
         key = re.sub(r"\W+", " ", s.lower()).strip()
@@ -142,6 +167,31 @@ def clean_note(text: str) -> str:
     if out and not out[-1].endswith((".", "!", "?")):
         out = out[:-1]                                   # drop an unfinished sentence (max_tokens reached)
     return " ".join(out[:4])
+
+
+_UP = r"\b(high|higher|raised|elevated|above|rose|risen|rising|up|increas\w*|climb\w*|fast|fever|febrile)\b"
+_DOWN = r"\b(low|lower|below|drop\w*|fell|fallen|falling|down|decreas\w*|dip\w*|slow)\b"
+
+
+def _direction(text: str):
+    up, down = re.search(_UP, text), re.search(_DOWN, text)
+    return "up" if up and not down else "down" if down and not up else None
+
+
+def _direction_conflict(note: str, ftext: str):
+    """Reject 'X is high' when the facts say X is low (and the reverse), clause by clause."""
+    fact_lines = ftext.splitlines()
+    for clause in re.split(r"[,;.]| and | but | while ", note):
+        said = _direction(clause)
+        if not said:
+            continue
+        for topic, pats in TOPICS.items():
+            if topic == "drugs" or not _mentions(clause, pats):
+                continue
+            truth = {_direction(l) for l in fact_lines if _mentions(l, pats)} - {None}
+            if truth and said not in truth:
+                return f"says {topic} is {said}, the facts say {'/'.join(sorted(truth))}"
+    return None
 
 
 def validate_note(raw: str, bed, facts: list[str], examples: list[str]):
@@ -159,6 +209,9 @@ def validate_note(raw: str, bed, facts: list[str], examples: list[str]):
     for topic, pats in TOPICS.items():
         if _mentions(low, pats) and not _mentions(ftext, pats):
             return None, f"mentions {topic}, which is not in the facts"
+    why = _direction_conflict(low, ftext)
+    if why:
+        return None, why
     for ex in examples:
         if difflib.SequenceMatcher(None, low, ex.lower()).ratio() > 0.7:
             return None, "copied an example note"
