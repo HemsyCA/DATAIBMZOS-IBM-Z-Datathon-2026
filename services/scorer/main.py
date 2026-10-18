@@ -15,7 +15,6 @@ os.environ.setdefault("TORCHDYNAMO_DISABLE", "1")   # before importing torch (IB
 
 import json
 import queue
-import re
 import threading
 import time
 from datetime import datetime, timezone
@@ -31,6 +30,7 @@ from pydantic import BaseModel
 from security import encryption
 from security.audit import append_alert
 from security.tokens import patient_token
+from services.scorer import notes
 
 try:
     import torch_nnpa  # noqa: F401  registers the "nnpa" device
@@ -115,6 +115,7 @@ def label(f: str) -> str:
 # ----------------------------------------------------------------------------- runtime state
 _io_lock = threading.Lock()
 _last_level: dict[str, str] = {}
+_risk_hist: dict[str, list] = {}           # key -> [(hour, risk)] for the last 7 hours
 _note_q: "queue.Queue[dict]" = queue.Queue(maxsize=100)
 
 
@@ -123,48 +124,26 @@ def _append(path: str, rec: dict):
         f.write(json.dumps(rec, default=float) + "\n")
 
 
-def template_note(job: dict) -> str:
-    drivers = "; ".join(f"{d['label']} {d['value']}" for d in job["drivers"]) or "multiple vital signs"
-    return (f"Bed {job['bed']}: sepsis risk rose to {job['risk']:.0%} (Critical) after {job['icu_hours']} h in ICU. "
-            f"Main changes: {drivers}. Please reassess at the bedside and follow the unit's sepsis protocol.")
-
-
-_NUM = re.compile(r"\d+(?:\.\d+)?")
-
-
-def validate_note(text: str, job: dict, facts: str):
-    """Granite is a small base model: never trust identifiers or numbers it writes.
-    The bed number is set by the system, and every number in the note must come from the facts."""
-    text = re.sub(r"(?i)\bbed\s*\d+\b", "This patient", text).strip()
-    allowed = [float(x) for x in _NUM.findall(facts)]
-    for x in _NUM.findall(text):
-        v = float(x)
-        if not any(abs(v - a) <= max(0.6, 0.02 * abs(a)) for a in allowed):
-            return None, f"number {x} not in the facts"
-    if len(text) < 20:
-        return None, "too short"
-    return f"Bed {job['bed']}: {text}", None
-
-
 def note_worker():
     while True:
         job = _note_q.get()
-        text, source = None, "template"
+        facts = notes.build_facts(job, job.get("risk_before"))
+        text, source, raw = None, "template", None
         if GRANITE_URL:
             try:
-                facts = (f"{job['icu_hours']} h in ICU. Sepsis risk {job['risk']:.2f} (Critical). "
-                         + "; ".join(f"{d['label']} {d['value']}" for d in job["drivers"]) + ".")
-                r = requests.post(GRANITE_URL, json={"facts": facts}, timeout=90)
+                r = requests.post(GRANITE_URL, json={"facts": notes.facts_text(facts)}, timeout=90)
                 r.raise_for_status()
-                text, why = validate_note(r.json().get("note", ""), job, facts)
+                raw = r.json().get("note", "")
+                text, why = notes.validate_note(raw, job["bed"], facts, r.json().get("examples", []))
                 source = "granite" if text else "template_rejected"
                 if why:
                     print(f"granite note rejected ({why}); using template", flush=True)
             except Exception as e:  # Granite down or slow: the alert already went out, use the template
                 print("granite unavailable:", e)
         _append(f"{RUNTIME}/notes.jsonl", {"patient_token": job["patient_token"], "bed": job["bed"],
-                                            "hour": job["hour"], "note": text or template_note(job),
-                                            "source": source, "ts": datetime.now(timezone.utc).isoformat()})
+                                            "hour": job["hour"], "note": text or notes.template_note(job["bed"], facts),
+                                            "source": source, "facts": facts, "granite_raw": raw,
+                                            "ts": datetime.now(timezone.utc).isoformat()})
 
 
 threading.Thread(target=note_worker, daemon=True).start()
@@ -245,10 +224,13 @@ def score_batch(batch: Batch):
         if rec["level"] != "Stable":
             append_alert({k: rec[k] for k in ("patient_token", "bed", "hour", "risk", "level", "top_features")})
         key = f"{tok}:{r.bed}"                         # per bed: the demo can bring a patient back in another bed
+        hist = [h for h in _risk_hist.get(key, []) if r.hour - 6 <= h[0] < r.hour]   # same stay, last 6 h
+        _risk_hist[key] = hist + [(r.hour, rec["risk"])]
         prev = _last_level.get(key)
         if rec["level"] == "Critical" and prev != "Critical":
             try:
-                _note_q.put_nowait({**rec, "drivers": rec["top_features"]})
+                _note_q.put_nowait({**rec, "drivers": rec["top_features"], "vitals": vitals,
+                                    "risk_before": hist[0][1] if hist else None})
             except queue.Full:
                 pass
         _last_level[key] = rec["level"]
