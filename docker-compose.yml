@@ -1,45 +1,47 @@
+# SepsisWatch Z — 4 services on the IBM z17 VM. No patient data leaves the machine.
+# Setup once:  bash scripts/make_env.sh     (creates .env with keys and the base image name)
+# Run:         docker compose up -d --build
+# Dashboard:   http://localhost:8501  (from your laptop: ssh -L 8501:localhost:8501 linux1@<vm-ip>)
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: services/Dockerfile
+    args:
+      BASE_IMAGE: ${BASE_IMAGE:-registry.linuxone.cloud.marist.edu/l1cc/jupyterlab-image-s390x:latest}
+  image: sepsiswatch-z:latest
+  env_file: .env
+  user: "${UID_GID:-1000:1000}"
+  volumes:
+    - ${SHARED_DIR:-/home/linux1/shared}/sepsis:/data/sepsis
+  restart: unless-stopped
+
 services:
   scorer:
-    build:
-      context: .
-      dockerfile: services/scorer/Dockerfile
+    <<: *app
+    command: ["uvicorn", "services.scorer.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
-      - MODELS_DIR=/data/sepsis/models
-      - FEATURE_LIST=/data/sepsis/data/processed/feature_list.json
-      - SEPSIS_HMAC_KEY=${SEPSIS_HMAC_KEY}
-      - SEPSIS_AES_KEY_HEX=${SEPSIS_AES_KEY_HEX}
-      - AUDIT_PATH=/data/audit.jsonl
-    volumes:
-      - /home/linux1/shared:/data
-    ports: ["8000:8000"]
-    user: "1000:1000"
-  replayer:
-    build:
-      context: .
-      dockerfile: services/replayer/Dockerfile
-    environment:
-      - FEATURES_PATH=/data/sepsis/data/processed/features.pkl
-      - FEATURE_LIST=/data/sepsis/data/processed/feature_list.json
-      - SCORER_URL=http://scorer:8000/score
-      - DELAY_SEC=1
-    volumes:
-      - /home/linux1/shared:/data
-    depends_on: [scorer]
-    user: "1000:1000"
+      GRANITE_URL: http://granite:8080/note
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on: [granite]
+
   granite:
-    image: registry.linuxone.cloud.marist.edu/l1cc/jupyterlab-image-s390x:latest
-    command: ["python", "-m", "llama_cpp.server", "--model", "/data/models/granite.gguf", "--port", "8080"]
-    volumes:
-      - /home/linux1/shared:/data
-    ports: ["8080:8080"]
-    user: "1000:1000"
-  dashboard:
-    build:
-      context: .
-      dockerfile: services/dashboard/Dockerfile
+    <<: *app
+    command: ["uvicorn", "services.granite.main:app", "--host", "0.0.0.0", "--port", "8080"]
     environment:
-      - AUDIT_PATH=/data/audit.jsonl
-    volumes:
-      - /home/linux1/shared:/data
-    ports: ["8501:8501"]
-    user: "1000:1000"
+      GRANITE_MODEL: /data/sepsis/models/granite-4.0-h-350m-base-be.f16.gguf
+      GRANITE_THREADS: "1"
+
+  replayer:
+    <<: *app
+    command: ["python", "-m", "services.replayer.main"]
+    environment:
+      SCORER_URL: http://scorer:8000
+      DELAY_SEC: "1"
+    depends_on: [scorer]
+
+  dashboard:
+    <<: *app
+    command: ["streamlit", "run", "services/dashboard/app.py", "--server.port=8501",
+              "--server.address=0.0.0.0", "--server.headless=true", "--browser.gatherUsageStats=false"]
+    ports: ["127.0.0.1:8501:8501"]
