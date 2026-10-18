@@ -1,0 +1,89 @@
+@startuml SepsisWatchZ_architecture
+' SepsisWatch Z - UML deployment + component view (IBM Z Datathon 2026)
+' Render at https://www.plantuml.com/plantuml/uml or https://www.planttext.com
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 15
+skinparam nodesep 25
+skinparam ranksep 40
+skinparam componentStyle uml2
+skinparam node {
+  BackgroundColor #F7F8FA
+  BorderColor #393939
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #0F62FE
+}
+skinparam database {
+  BackgroundColor #FFFFFF
+  BorderColor #525252
+}
+
+
+actor "ICU nurse /\nphysician" as nurse
+actor "Data scientist\n(team)" as ds
+cloud "PhysioNet 2019\n(public, CC BY 4.0)\n40,336 ICU stays" as physionet
+
+node "IBM z17 - LinuxONE VM 'dataibmzos'\n<<z/VM, 3 IFLs, Ubuntu 24.04 s390x>>\npatient data never leaves this node" as vm {
+
+  node "Jupyter Lab container\n<<IBM LinuxONE s390x image>>" as jup {
+    component "Training pipeline\n(notebooks 01 -> 05)\ningest, features, XGBoost,\nNN + NNPA benchmark, evaluation" as train
+  }
+
+  node "Docker Compose - one s390x image, 4 containers\n<<AppArmor, ports bound to 127.0.0.1>>" as compose {
+    node "replayer" as n_rep {
+      component "Replayer\n<<ingestion adapter>>\nhospital-B patients, 12-bed ward" as replayer
+    }
+    node "scorer :8000" as n_sc {
+      component "Risk service\nPOST /score_batch" as scorer
+      component "XGBoost engine\n(CPU, SIMD)" as xgb
+      component "Neural network engine\n<<torch_nnpa>>" as nn
+      component "Security module\nHMAC-SHA256 tokens\nAES-256-GCM, SHA3 audit" as sec
+      component "Note orchestrator\n+ fact-checker (guardrail)" as orch
+    }
+    node "granite :8080" as n_gr {
+      component "IBM Granite 4.0\nllama.cpp + zDNN" as granite
+    }
+    node "dashboard :8501" as n_da {
+      component "Dashboard\nGET /api/state" as dash
+    }
+  }
+
+  database "Shared volume /data/sepsis\n(outside Git)" as vol {
+    folder "models/\nxgb.json, mlp.pt,\nthresholds.json" as models
+    file "runtime/scores.jsonl\n(tokens + ciphertext)" as scores
+    file "runtime/notes.jsonl" as notes
+    file "audit/alerts.jsonl\n(SHA3 hash chain)" as audit
+  }
+
+  node "IBM z17 hardware" as hw {
+    component "Telum II NNPA\n(on-chip AI)" as nnpa
+    component "CPACF\n(crypto)" as cpacf
+    component "SIMD vxe2" as simd
+  }
+}
+
+physionet --> train : download .psv
+ds --> train : Jupyter Lab
+train --> models : trained models\n+ thresholds
+models ..> scorer : loaded at start-up
+
+replayer --> scorer : (1) whole ward per\nclinical hour
+scorer --> xgb : (2)
+scorer --> nn : (2) one batch
+scorer --> sec : (3) every batch
+scorer --> scores : (4) risk, level, drivers
+sec --> audit : (5) Watch / Critical
+scorer --> orch : (6) new Critical (async)
+orch --> granite : (7) de-identified facts
+orch --> notes : (8) verified note\nor safe template
+dash --> scores : (9) read
+dash --> notes : (9) read
+nurse --> dash : SSH tunnel\n127.0.0.1:18501
+
+nn ..> nnpa : runs on
+granite ..> nnpa : zDNN
+sec ..> cpacf : AES-256-GCM
+xgb ..> simd : vectorized
+@enduml
