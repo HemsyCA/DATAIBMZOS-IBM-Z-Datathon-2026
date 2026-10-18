@@ -53,14 +53,19 @@ def state():
         h.append({"patient_token": r["patient_token"], "hour": r["hour"], "icu_hours": r["icu_hours"],
                   "risk": r["risk"], "vitals": r.get("vitals", {})})
         latest[b] = r
-    note_by_token = {n["patient_token"]: n for n in notes}
+    notes_by_key = {}                                  # (token, bed) -> notes in time order
+    for n in notes:
+        notes_by_key.setdefault((n["patient_token"], n.get("bed")), []).append(n)
     beds = []
     for b in range(1, BEDS + 1):
         r = latest.get(b)
         if r is None:
             beds.append({"bed": b, "empty": True})
             continue
-        n = note_by_token.get(r["patient_token"])
+        # only a note written in THIS bed during THIS stay (patients can come back in another bed when the demo loops)
+        stay_start, now = history[b][0]["hour"], r["hour"]
+        cands = [x for x in notes_by_key.get((r["patient_token"], b), []) if stay_start <= x["hour"] <= now]
+        n = cands[-1] if cands else None
         beds.append({"bed": b, "token": r["patient_token"][:10], "level": r["level"], "risk": r["risk"],
                      "icu_hours": r["icu_hours"], "vitals": r.get("vitals", {}), "p_xgb": r.get("p_xgb"),
                      "p_mlp": r.get("p_mlp"), "drivers": r.get("top_features", []),

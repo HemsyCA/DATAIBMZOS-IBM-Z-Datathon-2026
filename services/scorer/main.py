@@ -244,13 +244,14 @@ def score_batch(batch: Batch):
                                              "sex_enc": encryption.encrypt(r.features.get("Gender"))})
         if rec["level"] != "Stable":
             append_alert({k: rec[k] for k in ("patient_token", "bed", "hour", "risk", "level", "top_features")})
-        prev = _last_level.get(tok)
+        key = f"{tok}:{r.bed}"                         # per bed: the demo can bring a patient back in another bed
+        prev = _last_level.get(key)
         if rec["level"] == "Critical" and prev != "Critical":
             try:
                 _note_q.put_nowait({**rec, "drivers": rec["top_features"]})
             except queue.Full:
                 pass
-        _last_level[tok] = rec["level"]
+        _last_level[key] = rec["level"]
         results.append(rec)
 
     status = {"ts": ts, "model": MODEL, "device": DEVICE, "batch_size": len(rows), "xgb_ms": round(xgb_ms, 3),
