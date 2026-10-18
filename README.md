@@ -1,88 +1,108 @@
-# SepsisWatch Z — Early sepsis warning on IBM LinuxONE
+# 🩺 SepsisWatch Z
 
-**IBM Z Datathon 2026 · Theme: Real-Time AI for Critical Decisions (with AI Secured elements)**
+**Early sepsis warning for the ICU, running entirely on an IBM z17 mainframe.**
+Every patient, every hour: who to look at first, why, and a handoff note — without patient data ever leaving the machine.
 
-SepsisWatch Z scores every ICU patient every hour and warns nurses which patients are likely to develop sepsis up to 6 hours before onset. Everything runs on an IBM LinuxONE (z17) virtual machine, so patient data never leaves the platform.
+`IBM Z Datathon 2026` · `Theme 1: Real-Time AI for Critical Decisions` · `Theme 2: AI Secured` · `Event code SSF2026`
 
-- **Who it is for:** ICU nurses and physicians, especially in hospitals with few specialists.
-- **What they see:** a bed board with three levels (**Critical**, **Watch**, **Stable**) and, for each Critical patient, a short handoff note written by IBM Granite.
-- **Decision support, not diagnosis:** the system tells the team where to look first. Clinicians always decide.
+🎬 **Demo video:** _add YouTube link here_ · 📊 **Pitch deck:** [`docs/SepsisWatchZ_pitch_deck.pdf`](docs/SepsisWatchZ_pitch_deck.pdf)
 
-## How it uses IBM Z
+![SepsisWatch Z bed board running on the IBM z17](docs/figures/dashboard.png)
 
-| Component | IBM Z capability |
+---
+
+## 💡 The problem
+
+- **Sepsis kills about 11 million people a year** — roughly 1 in 5 deaths worldwide — and every hour of delay matters.
+- In the ICU its early signs are **subtle and scattered** across dozens of vital signs and lab values.
+- Today's screening rule (**SIRS ≥ 2**) is so noisy that, on real data, it kept patients *without* sepsis **in alarm 24% of the time** → nurses stop trusting alarms.
+- Health data is sensitive: hospitals can't simply send it to a public-cloud AI.
+
+## ✅ Our solution
+
+A live **ICU bed board** that scores every patient every hour and shows:
+
+| | |
 |---|---|
-| Neural network inference | Telum II on-chip AI accelerator (**NNPA**) via `torch_nnpa` |
-| XGBoost | z17 SIMD vector units (`vxe2`) |
-| Granite handoff notes | `llama.cpp` built with **zDNN** |
-| Security layer | **CPACF** hardware crypto (AES-256-GCM, SHA-3) |
-| Whole system | Containers on s390x under z/VM, AppArmor |
+| 🔴 🟡 🟢 | **Critical / Watch / Stable** for each bed |
+| 🔎 | **Why this alert** — the top clinical drivers (e.g. lactate, respiratory rate) |
+| 📝 | A **handoff note** written by **IBM Granite** on the z17 and **fact-checked** before a nurse sees it |
+| 🔒 | Patient IDs **tokenized**, age/sex **encrypted with CPACF**, every alert in a **tamper-evident audit log** |
 
-## Data
+> Decision support, not diagnosis — clinicians always decide.
 
-[PhysioNet Computing in Cardiology Challenge 2019](https://physionet.org/content/challenge-2019/1.0.0/) (CC BY 4.0): 40,336 real ICU stays from two US hospital systems, one row per patient-hour, 40 clinical variables and a `SepsisLabel` that turns on 6 hours before Sepsis-3 onset.
+## 📈 Results (on a hospital the model never saw)
 
-We **train on hospital A (set A)** and **test on hospital B (set B)**, which the models never see during training. This shows the model generalizes across hospitals.
+We trained on hospital A and tested on hospital B from the public **PhysioNet 2019** dataset (40,336 real ICU stays, 1.55 M patient-hours).
 
-Data lives **outside the repo**, on the VM: `~/shared/sepsis/data/` (raw `.psv` files and processed pickles) and `~/shared/sepsis/models/` (trained models and predictions).
+| | Sepsis patients alerted (≤ 12 h before onset) | Time in alarm for patients *without* sepsis | New false alarms per patient-day |
+|---|:---:|:---:|:---:|
+| SIRS ≥ 2 (today) | 75% | 24% | 1.32 |
+| **SepsisWatch Z** | **55%** | **8%** ⬇️ | **0.49** ⬇️ |
 
-## Pipeline (run on the VM, in this order)
+- **One third of the alarm time** and **63% fewer new false alarms** than SIRS.
+- Tuned to SIRS-level detection (68%), it still spends **40% less time in alarm**.
+- Consistent across groups: detection differs by 1.7 points between women and men.
 
-| Notebook | What it does | Main outputs |
-|---|---|---|
-| `notebooks/01_ingest_exploration.ipynb` | Merges the 40,336 `.psv` files into one table and explores the data | `sepsis_all.pkl`, `docs/figures/01–03_*.png` |
-| `notebooks/02_features.ipynb` | 140 hourly features (last value, measured flags, 6 h trends, SIRS/qSOFA) and the A/B split | `features.pkl`, `feature_list.json` |
-| `notebooks/03_xgboost.ipynb` | SIRS/qSOFA baselines and XGBoost, feature importance | `xgb.json`, `preds_xgb.pkl`, `docs/figures/xgb_importance.png` |
-| `notebooks/04_nnpa_mlp.ipynb` | MLP trained on CPU, inference on the NNPA, CPU vs. NNPA latency benchmark | `mlp.pt`, `preds_mlp.pkl`, `docs/figures/latency_cpu_vs_nnpa.png` |
-| `notebooks/05_eval.ipynb` | Ensemble, alert thresholds, patient-level metrics and fairness on hospital B | `thresholds.json`, `docs/results.md`, `docs/figures/*_hospital_B.png` |
+⚡ **On the Telum II on-chip AI accelerator (NNPA):** a 12-bed ward is scored in **~1.5 ms**, and the whole test hospital (762 k patient-hours) **12× faster than on CPU** with **99.98% identical decisions**.
 
-Open each notebook in Jupyter Lab on the VM and use **Kernel → Restart Kernel and Run All Cells**. Results are in [`docs/results.md`](docs/results.md).
+Full tables, fairness and figures → [`docs/results.md`](docs/results.md)
 
-To download the dataset again: `bash data/download_physionet.sh` (about 7 minutes from the public S3 bucket).
+## 🏗️ How it works
 
-## Repository layout
+![UML deployment and component diagram](docs/figures/architecture.png)
+
+1. **Train** (5 Jupyter notebooks on the z17): ingest → 140 hourly features → XGBoost → neural network → evaluate.
+2. **Stream**: a replayer sends a 12-bed ward to the **scorer** every clinical hour.
+3. **Score**: XGBoost + a neural network **on the NNPA** → risk level + why.
+4. **Explain**: when a patient turns Critical, **IBM Granite** (llama.cpp + zDNN) drafts a note; a **fact-checker** rejects anything not in the data.
+5. **Show**: the dashboard reads the stored results — the nurse opens it through an SSH tunnel.
+
+UML source: [`docs/architecture/`](docs/architecture/)
+
+## 🖥️ IBM Z features we use
+
+| IBM Z capability | What it does in SepsisWatch Z |
+|---|---|
+| **Telum II NNPA** (on-chip AI) | Runs the neural network that decides the alerts |
+| **zDNN** | Runs IBM Granite locally for the handoff notes |
+| **CPACF** (hardware crypto) | AES-256-GCM encryption of sensitive fields, SHA-3 audit chain |
+| **SIMD vector units** | Fast XGBoost and data processing |
+| **z/VM + containers** | 4 isolated Docker services on s390x, nothing exposed to the internet |
+
+## 🚀 Run it (on the LinuxONE VM)
+
+```bash
+git clone https://github.com/HemsyCA/DATAIBMZOS-IBM-Z-Datathon-2026.git
+cd DATAIBMZOS-IBM-Z-Datathon-2026
+bash scripts/make_env.sh          # creates .env with keys (never committed)
+docker compose up -d --build      # replayer · scorer · granite · dashboard
+curl -s localhost:18000/health    # → "device": "nnpa", "encryption": true
+```
+
+Then open the dashboard through an SSH tunnel, e.g. `ssh -L 8501:localhost:8501 linux1@<vm-ip>` → http://localhost:8501 (port set by `DASHBOARD_HOST_PORT` in `.env`).
+To rebuild the models, run `notebooks/01` → `05` in Jupyter Lab. Details: [`services/README.md`](services/README.md).
+
+## 📁 What's inside
 
 ```
-├── README.md
-├── requirements.txt
-├── data/download_physionet.sh      # dataset download (data itself stays outside the repo)
-├── notebooks/                      # 01–05 pipeline, executed on the z17 with outputs saved
-├── services/                       # scorer, replayer, granite, dashboard (see services/README.md)
-└── docs/
-    ├── figures/                    # charts for the deck and README
-    ├── evidence/                   # screenshots for the judges + CHECKLIST.md + IBM labs
-    └── results.md                  # final metrics (written by 05_eval)
+notebooks/        5 notebooks, executed on the IBM z17 (outputs included)
+services/         scorer · replayer · granite · dashboard (FastAPI)
+security/         tokens · encryption (CPACF) · hash-chained audit
+docs/             results, figures, architecture, pitch deck
+docs/evidence/    screenshots from the z17 + the 2 IBM labs
 ```
 
-## Team workflow
+## 🧭 Responsible AI
 
-1. **Work on your laptop in a branch** named after you: `jhojan/...`, `miguel/...`, `hemsy/...`, `misael/...`. Open a Pull Request to `main` and merge it.
-2. **The VM always stays on `main`.** It is a single shared folder used by everyone (same `linux1` user), so never switch branches there. To get the latest code:
-   ```bash
-   cd ~/shared/DATAIBMZOS-IBM-Z-Datathon-2026
-   git checkout main && git pull
-   ```
-3. **Notebooks run on the VM, so their outputs are committed from the VM** right after running them, with your name:
-   ```bash
-   git add notebooks/0X_name.ipynb docs/figures docs/results.md
-   git commit -m "Run 0X on z17" --author="Your Name <your-email>"
-   git push
-   ```
-4. **One owner per notebook at a time.** `.ipynb` files produce messy merge conflicts. Pull before you edit a notebook that was run on the VM.
-5. **Everything in English**: code, outputs, figures and screenshots (they are evidence for the judges).
-6. Never delete files in `~/shared` or close other people's sessions without asking.
+- Alarm thresholds cap false alarms (≤ 1 per patient-day) to fight alarm fatigue.
+- Explanations show physiology only; the LLM never receives patient identifiers.
+- It outputs a **risk score**, not a diagnosis. Validated on a public 2019 benchmark — the next step is local validation with hospitals.
 
-## Open-source libraries
+## 🧰 Built with
 
-NumPy, pandas, scikit-learn, XGBoost, PyTorch (with IBM `torch_nnpa`), Matplotlib, FastAPI, Uvicorn, Streamlit, llama.cpp, IBM Granite. See `requirements.txt`.
+[PhysioNet 2019](https://physionet.org/content/challenge-2019/1.0.0/) · Python · NumPy · pandas · scikit-learn · XGBoost · PyTorch + IBM `torch_nnpa` · FastAPI · llama.cpp + zDNN · [IBM Granite 4.0](https://huggingface.co/ibm-granite) · OpenSSL · Docker
 
-## Responsible AI
+## 👥 Team
 
-- Thresholds are capped at about one false alarm per patient-day to avoid alarm fatigue.
-- Sensitivity is reported by sex and age group (`05_eval`).
-- Patient IDs are tokenized and sensitive fields encrypted before storage; every alert goes to a hash-chained audit log.
-- Limitation: validated on a public 2019 benchmark. Next step before clinical use: local validation with each hospital's own data.
-
-## Team
-
-Hemsy, Jhojan, Misael and Miguel.
+**Hemsy · Jhojan · Misael · Miguel** — built during the IBM Z Datathon, Oct 17–18, 2026.
