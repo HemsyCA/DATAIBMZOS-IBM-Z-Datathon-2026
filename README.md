@@ -50,7 +50,13 @@ Full tables, fairness and figures → [`docs/results.md`](docs/results.md)
 
 ## 🏗️ How it works
 
+![Architecture overview: everything runs inside one IBM z17](docs/figures/architecture_simple.png)
+
+<details><summary>Detailed UML deployment and component diagram</summary>
+
 ![UML deployment and component diagram](docs/figures/architecture.png)
+
+</details>
 
 1. **Train** (5 Jupyter notebooks on the z17): ingest → 140 hourly features → XGBoost → neural network → evaluate.
 2. **Stream**: a replayer sends a 12-bed ward to the **scorer** every clinical hour.
