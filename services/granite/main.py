@@ -44,7 +44,7 @@ def llm():
             return _llm
         from llama_cpp import Llama
         print("Loading Granite from", MODEL_PATH, flush=True)
-        _llm = Llama(model_path=MODEL_PATH, n_ctx=1024, n_threads=THREADS, verbose=True)  # verbose: shows zDNN backend
+        _llm = Llama(model_path=MODEL_PATH, n_ctx=512, n_batch=512, n_threads=THREADS, verbose=True)  # verbose: shows zDNN backend
         return _llm
 
 
@@ -72,7 +72,7 @@ def note(req: Req):
     shots = EXAMPLES[:2]                       # fixed prefix -> llama.cpp reuses the cached prompt
     t0 = time.perf_counter()
     with _lock:   # one generation at a time on 3 vCPUs
-        out = llm()(prompt(req.facts, shots), max_tokens=60, temperature=0.4, top_p=0.9, repeat_penalty=1.18,
+        out = llm()(prompt(req.facts, shots), max_tokens=45, temperature=0.4, top_p=0.9, repeat_penalty=1.18,
                     stop=["\nFacts", "Facts:", "\n\n", "\n-", "Note:"], echo=False)
     text = out["choices"][0]["text"].strip()
     print(f"granite raw ({time.perf_counter() - t0:.1f}s):", text.replace("\n", " ")[:300], flush=True)
