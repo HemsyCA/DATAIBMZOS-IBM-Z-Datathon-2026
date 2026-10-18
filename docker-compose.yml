@@ -22,7 +22,7 @@ services:
     command: ["uvicorn", "services.scorer.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       GRANITE_URL: http://granite:8080/note
-    ports: ["127.0.0.1:8000:8000"]
+    ports: ["127.0.0.1:${SCORER_HOST_PORT:-18000}:8000"]   # host 8000 is often taken on the VM
     depends_on: [granite]
 
   granite:
@@ -43,4 +43,4 @@ services:
   dashboard:
     <<: *app
     command: ["uvicorn", "services.dashboard.main:app", "--host", "0.0.0.0", "--port", "8501"]
-    ports: ["127.0.0.1:8501:8501"]
+    ports: ["127.0.0.1:${DASHBOARD_HOST_PORT:-8501}:8501"]

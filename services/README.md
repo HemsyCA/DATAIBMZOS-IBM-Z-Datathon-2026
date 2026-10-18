@@ -39,7 +39,7 @@ docker compose logs -f replayer       # one line per clinical hour: levels + XGB
 
 Dashboard from your laptop: `ssh -i Respaldo.pem -L 8501:localhost:8501 linux1@148.100.108.226`, then open http://localhost:8501.
 
-Health check: `curl -s localhost:8000/health` → must show `"device": "nnpa"`.
+Health check: `curl -s localhost:18000/health` → must show `"device": "nnpa"`.
 
 ### Plan B — without Docker Compose
 
