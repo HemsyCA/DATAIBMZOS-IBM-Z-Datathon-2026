@@ -97,7 +97,7 @@ h1{font-size:2rem;margin:0 0 4px}.cap{color:var(--muted);font-size:.9rem;margin-
 @media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}.detail{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
 <h1>SepsisWatch Z · ICU bed board</h1>
-<div class="cap">Decision support for early sepsis warning on IBM LinuxONE (z17). Patients are pseudonymized tokens; age and sex are stored encrypted. Clinicians always decide.</div>
+<div class="cap">Decision support for early sepsis warning on IBM LinuxONE (z17). Patients are pseudonymized tokens (HMAC-SHA256); <span id="enc">…</span> Clinicians always decide.</div>
 <div class="kpis" id="kpis"></div><div class="grid" id="grid"></div>
 <div class="detail"><div id="left"></div><div id="right"></div></div>
 </div>
@@ -121,6 +121,7 @@ async function tick(){
   let d;try{d=await (await fetch("api/state")).json()}catch(e){return}
   const beds=d.beds.filter(b=>!b.empty),st=d.status||{},cnt={Critical:0,Watch:0,Stable:0};beds.forEach(b=>cnt[b.level]++);
   const lat=((st.xgb_ms||0)+(st.mlp_ms||0)).toFixed(1);
+  document.getElementById("enc").textContent=st.encryption?"age and sex are stored encrypted (AES-256-GCM, CPACF).":"age and sex are not stored.";
   document.getElementById("kpis").innerHTML=
     [["Critical",cnt.Critical],["Watch",cnt.Watch],["Stable",cnt.Stable],["Model · NN device",`${String(st.model||"–")} · ${String(st.device||"–").toUpperCase()}`],
      ["Ward scoring latency",`${lat} ms`]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join("")+

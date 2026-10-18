@@ -254,7 +254,7 @@ def score_batch(batch: Batch):
         _last_level[key] = rec["level"]
         results.append(rec)
 
-    status = {"ts": ts, "model": MODEL, "device": DEVICE, "batch_size": len(rows), "xgb_ms": round(xgb_ms, 3),
+    status = {"ts": ts, "model": MODEL, "device": DEVICE, "encryption": encryption.AVAILABLE, "batch_size": len(rows), "xgb_ms": round(xgb_ms, 3),
               "mlp_ms": round(mlp_ms, 3), "counts": {lv: int((level == lv).sum()) for lv in ("Critical", "Watch", "Stable")}}
     with _io_lock, open(f"{RUNTIME}/status.json", "w") as f:
         json.dump(status, f)
