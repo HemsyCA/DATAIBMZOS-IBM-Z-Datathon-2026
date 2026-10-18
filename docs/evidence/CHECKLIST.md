@@ -14,25 +14,25 @@ All screenshots must show **English** output.
 
 ## B. Data and features
 
-- [ ] `06-notebook-env-s390x-nnpa.png` — notebook 01, section 1: s390x, 3 CPUs, NNPA and vxe2 = True · *recapture in English*
+- [x] `06-notebook-env-s390x-nnpa.png` — notebook 01, section 1: s390x, 3 CPUs, NNPA and vxe2 = True
 - [ ] `07-ingest-z17.png` — notebook 01, section 4: 40,336 patients, 1,552,210 rows, total ingest time on s390x · *recapture in English*
 - [ ] `08-features-z17.png` — notebook 02: train/val/test split table and "Total notebook time ... on s390x"
 
 ## C. IBM Z capabilities
 
-- [ ] `09-z17-nnpa-flag.png` — `lscpu` (Machine type 9175) and `grep -o -w nnpa /proc/cpuinfo`
-- [ ] `10-zvm-ifl.png` — `sudo vmcp q v all` showing the 3 IFL CPUs
+- [x] `09-z17-nnpa-flag.png` — `lscpu` (Machine type 9175) and `grep -o -w nnpa /proc/cpuinfo`
+- [x] `10-zvm-ifl.png` — `sudo vmcp q v all` showing the 3 IFL CPUs
 - [ ] `11-tensor-nnpa.png` — notebook 04, section 6: `NNPA available: True` and "Evidence 11 → device: nnpa:0"
 - [ ] `12-latency-cpu-vs-nnpa.png` — notebook 04, section 8: p50/p95 table and chart
-- [ ] `13-cpacf-openssl.png` — `grep -E '^driver' /proc/crypto` (aes-s390) and `openssl speed -evp aes-256-gcm -seconds 3`
-- [ ] `14-granite-zdnn.png` — Granite load log showing `libggml-zdnn.so`
+- [x] `13-cpacf-openssl.png` — `grep -E '^driver' /proc/crypto` (aes-s390) and `openssl speed -evp aes-256-gcm -seconds 3`
+- [x] `14-granite-zdnn.png` — Granite load log showing `libggml-zdnn.so`
 
 ## D. Services and security
 
-- [ ] `15-docker-compose-ps.png` — `docker compose ps` with replayer, scorer, granite and dashboard up
-- [ ] `16-audit-ok.png` — `verify_audit.py` passing (green)
-- [ ] `17-audit-tampered.png` — `verify_audit.py` failing (red) after editing one record
-- [ ] `18-apparmor.png` — `sudo aa-status`
+- [x] `15-docker-compose-ps.png` — `docker compose ps` with replayer, scorer, granite and dashboard up
+- [x] `16-audit-ok.png` — `verify_audit.py` passing (green)
+- [x] `17-audit-tampered.png` — `verify_audit.py` failing (red) after editing one record
+- [x] `18-apparmor.png` — `sudo aa-status`
 
 ## E. Model and results
 
