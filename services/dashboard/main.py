@@ -116,7 +116,7 @@ async function tick(){
   const beds=d.beds.filter(b=>!b.empty),st=d.status||{},cnt={Critical:0,Watch:0,Stable:0};beds.forEach(b=>cnt[b.level]++);
   const lat=((st.xgb_ms||0)+(st.mlp_ms||0)).toFixed(1);
   document.getElementById("kpis").innerHTML=
-    [["Critical",cnt.Critical],["Watch",cnt.Watch],["Stable",cnt.Stable],["Neural net device",String(st.device||"–").toUpperCase()],
+    [["Critical",cnt.Critical],["Watch",cnt.Watch],["Stable",cnt.Stable],["Model · NN device",`${String(st.model||"–")} · ${String(st.device||"–").toUpperCase()}`],
      ["Ward scoring latency",`${lat} ms`]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join("")+
     `<div class="small" style="grid-column:1/-1">XGBoost ${(st.xgb_ms||0).toFixed(2)} ms + MLP on ${esc(String(st.device||"").toUpperCase())} ${(st.mlp_ms||0).toFixed(2)} ms for ${st.batch_size||0} beds</div>`;
   if(sel===null||!beds.find(b=>b.bed===sel)){const c=beds.find(b=>b.level==="Critical");sel=c?c.bed:(beds[0]||{}).bed}

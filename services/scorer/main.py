@@ -69,10 +69,28 @@ MLP = build_mlp(len(FEATURES), mcfg["hidden"], mcfg["dropout"])
 MLP.load_state_dict(torch.load(f"{MODEL_DIR}/mlp.pt", map_location="cpu"))
 MLP.eval().to(DEVICE)
 
+# MODEL picks which score drives the alert levels: ensemble (default), xgb or mlp.
+# Each model has its own thresholds, chosen on validation in notebooks/05_eval (thresholds.json["per_model"]).
 thr = json.load(open(f"{MODEL_DIR}/thresholds.json"))
-W_XGB = float(thr["weights"]["xgb"])
-W_MLP = float(thr["weights"]["mlp"])
-CRITICAL, WATCH = float(thr["critical"]), float(thr["watch"])
+MODEL = os.environ.get("MODEL", "ensemble").lower()
+if MODEL == "ensemble":
+    W_XGB, W_MLP = float(thr["weights"]["xgb"]), float(thr["weights"]["mlp"])
+elif MODEL == "xgb":
+    W_XGB, W_MLP = 1.0, 0.0
+elif MODEL == "mlp":
+    W_XGB, W_MLP = 0.0, 1.0
+else:
+    raise SystemExit(f"MODEL must be ensemble, xgb or mlp (got {MODEL!r})")
+per_model = thr.get("per_model", {})
+if MODEL in per_model:
+    CRITICAL, WATCH = float(per_model[MODEL]["critical"]), float(per_model[MODEL]["watch"])
+elif MODEL == "ensemble":
+    CRITICAL, WATCH = float(thr["critical"]), float(thr["watch"])
+else:
+    raise SystemExit(f"thresholds.json has no thresholds for {MODEL!r}: re-run notebooks/05_eval.ipynb")
+CRITICAL = float(os.environ.get("CRITICAL_THRESHOLD", CRITICAL))   # optional manual override
+WATCH = float(os.environ.get("WATCH_THRESHOLD", WATCH))
+print(f"Scorer: MODEL={MODEL} weights xgb={W_XGB} mlp={W_MLP} | Critical >= {CRITICAL:.4f} | Watch >= {WATCH:.4f} | MLP on {DEVICE}", flush=True)
 
 # Only physiology explains an alert to a nurse (no measurement-pattern or administrative fields)
 NOT_CLINICAL = ("_hours_since", "_measured")
@@ -148,7 +166,7 @@ class Batch(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "device": DEVICE, "nnpa_available": NNPA_OK, "n_features": len(FEATURES),
+    return {"status": "ok", "model": MODEL, "device": DEVICE, "nnpa_available": NNPA_OK, "n_features": len(FEATURES),
             "weights": {"xgb": W_XGB, "mlp": W_MLP}, "critical": CRITICAL, "watch": WATCH,
             "granite": bool(GRANITE_URL), "encryption": encryption.AVAILABLE}
 
@@ -215,7 +233,7 @@ def score_batch(batch: Batch):
         _last_level[tok] = rec["level"]
         results.append(rec)
 
-    status = {"ts": ts, "device": DEVICE, "batch_size": len(rows), "xgb_ms": round(xgb_ms, 3),
+    status = {"ts": ts, "model": MODEL, "device": DEVICE, "batch_size": len(rows), "xgb_ms": round(xgb_ms, 3),
               "mlp_ms": round(mlp_ms, 3), "counts": {lv: int((level == lv).sum()) for lv in ("Critical", "Watch", "Stable")}}
     with _io_lock, open(f"{RUNTIME}/status.json", "w") as f:
         json.dump(status, f)

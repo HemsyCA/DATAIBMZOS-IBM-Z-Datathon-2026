@@ -52,6 +52,19 @@ docker exec -it notebook bash /home/ibm-user/shared/DATAIBMZOS-IBM-Z-Datathon-20
 ```
 Check with `docker exec notebook curl -s localhost:8000/health`. The notebook container usually only publishes Jupyter's port, so open the dashboard through Jupyter's proxy if available (`http://<jupyter-url>/proxy/8501/`) or use Compose.
 
+## Switch the alert model
+
+The scorer always computes both XGBoost and the MLP on the NNPA; `MODEL` decides which score drives the levels, each with its own thresholds chosen on validation (`notebooks/05_eval` → `thresholds.json["per_model"]`).
+
+```bash
+echo "MODEL=xgb" >> .env            # ensemble (default) | xgb | mlp
+rm -f ~/shared/sepsis/runtime/*.jsonl ~/shared/sepsis/runtime/status.json   # clean board (optional)
+docker compose up -d scorer replayer
+curl -s localhost:18000/health      # shows "model"
+```
+
+Optional manual override: `CRITICAL_THRESHOLD=0.6` / `WATCH_THRESHOLD=0.4` in `.env` (then add them under `scorer.environment`).
+
 ## Evidence
 
 | # | Command |
