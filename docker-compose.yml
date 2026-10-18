@@ -38,7 +38,7 @@ services:
     command: ["python", "-m", "services.replayer.main"]
     environment:
       SCORER_URL: http://scorer:8000
-      DELAY_SEC: "1"
+      DELAY_SEC: "${DELAY_SEC:-4}"
     depends_on: [scorer]
 
   dashboard:
